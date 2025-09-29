@@ -1,5 +1,7 @@
 import React, { useEffect,type CSSProperties } from "react";
 import axios from "axios";
+import googleLogo from "../assets/google_logo.png";
+
 
 
 const CLIENT_ID = "785596307174-r3f9ad4ftba0fdb9n0asfnq3p9ae5048.apps.googleusercontent.com";
@@ -21,6 +23,7 @@ const LoginPage = () => {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
         console.log("Backend response:", res.data);
+      
 
         // Redirect to dashboard after storing token
         window.location.href = "/dashboard";
@@ -35,7 +38,7 @@ const LoginPage = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={styles.cardStyle}>
         <h1 style={styles.title}>Login</h1>
 
         <div style={styles.roleToggle}>
@@ -43,9 +46,8 @@ const LoginPage = () => {
           <button style={styles.disabledButton}>User</button>
         </div>
 
-        <button onClick={handleLogin} style={styles.googleButton}>
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
-               alt="Google" style={styles.googleIcon} />
+          <button onClick={handleLogin} style={styles.googleButton}>
+          <img src={googleLogo} alt="Google" style={styles.googleIcon} />
           Sign in with Google
         </button>
       </div>
@@ -59,54 +61,62 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
-    background: "#f7f7f7",
+    background: "#f0f2f5",
   },
-  card: {
-    width: "300px",
-    padding: "10px",
-    borderRadius: "5px",
-    boxShadow: "0 0 5px rgba(0,0,0,0.2)",
+  cardStyle: {
+    width: "380px",          // Increased width
+    padding: "30px",         // Increased padding
+    borderRadius: "12px",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.1)", // Slightly deeper shadow
     backgroundColor: "#fff",
-    textAlign: "center", // <-- this is causing the error
-  }as React.CSSProperties,
+    textAlign: "center" as const,
+  },
   title: {
     marginBottom: "20px",
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#2c3e50",
+    fontSize: "26px",        // Bigger title
+    fontWeight: "600",
+    color: "#333",
   },
   roleToggle: {
     display: "flex",
-    gap: "10px",
+    gap: "12px",
     marginBottom: "20px",
+    justifyContent: "center",
   },
   disabledButton: {
     flex: 1,
-    padding: "10px 0",
-    borderRadius: "8px",
+    padding: "12px 0",       // Bigger button
+    borderRadius: "10px",
     border: "1px solid #ccc",
-    backgroundColor: "#f5f5f5",
-    color: "#888",
+    backgroundColor: "#4169E1",
+    color: "#e9e5e5ff",
     cursor: "not-allowed",
+    fontSize: "16px",        // Bigger text
   },
   googleButton: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "10px",
-    padding: "10px 20px",
+    gap: "12px",
+    padding: "12px 20px",    // Bigger button
     width: "100%",
-    borderRadius: "8px",
+    borderRadius: "10px",
     border: "1px solid #ddd",
     backgroundColor: "#fff",
-    fontSize: "16px",
+    fontSize: "16px",        // Slightly bigger text
+    fontWeight: "500",
     cursor: "pointer",
     transition: "all 0.2s",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
   },
   googleIcon: {
-    width: "20px",
-    height: "20px",
+    width: "22px",            // Bigger icon
+    height: "22px",
   },
 };
 
+
+
 export default LoginPage;
+
+
