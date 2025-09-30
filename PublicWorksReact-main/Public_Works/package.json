@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
+    "jwt-decode": "^4.0.0",
+    "leaflet": "^1.9.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-leaflet": "^5.0.0",
     "axios": "^1.12.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.544.0",
@@ -20,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@types/leaflet": "^1.9.20",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",

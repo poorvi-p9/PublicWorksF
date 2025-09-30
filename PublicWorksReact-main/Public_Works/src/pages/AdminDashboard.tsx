@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
   const [issues, setIssues] = useState<any[]>([]);   //array of all issues from the backend.
