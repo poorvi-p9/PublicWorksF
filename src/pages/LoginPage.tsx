@@ -12,6 +12,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const handleFormLogin = async (e: React.FormEvent) => {
+    debugger
     e.preventDefault();
     setLoading(true);
 

@@ -41,6 +41,8 @@ import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import PrivateRoute from './components/PrivateRoute';
+import IssuePage from './pages/IssuePage';
+
 
 const App: React.FC = () => (
   <BrowserRouter>
@@ -54,7 +56,12 @@ const App: React.FC = () => (
         path="/user-dashboard"
         element={<PrivateRoute role="user"><UserDashboard /></PrivateRoute>}
       />
+      <Route path="/create-issue" element={<IssuePage />} />
+ 
     </Routes>
+
+   
+    
   </BrowserRouter>
 );
 
