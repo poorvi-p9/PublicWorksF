@@ -1,6 +1,6 @@
 import React, { type JSX } from "react";
 import { Navigate } from 'react-router-dom';
-import { getAuthRole, getAuthToken } from '../utils/auth';
+import { getAuthRole, getAuthToken } from '../utils/authHelper';
 
 interface PrivateRouteProps {
   children: JSX.Element;
