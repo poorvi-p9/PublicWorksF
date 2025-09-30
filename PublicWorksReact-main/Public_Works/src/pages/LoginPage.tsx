@@ -1,221 +1,235 @@
-import React, { useState } from "react";
-import { GoogleLogin } from "@react-oauth/google";
-import type { CredentialResponse } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
-import { login, googleLogin } from "../services/authService"; // Adjust the path
+import React, { useEffect, type CSSProperties, useState } from "react";
+import axios from "axios";
+import googleLogo from "../assets/google_logo.png";
+import agreeyaLogo from "../assets/agreeya_logo.png";
 
-const Login: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<"admin" | "user">("user");
+const CLIENT_ID = "785596307174-r3f9ad4ftba0fdb9n0asfnq3p9ae5048.apps.googleusercontent.com";
+const FRONTEND_REDIRECT = "http://localhost:5173/login";
+
+const LoginPage = () => {
+  const [showAdminForm, setShowAdminForm] = useState(false);
+  const [showUser, setShowUser] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-  const handleFormLogin = async (e: React.FormEvent) => {
-    debugger
-    e.preventDefault();
-    setLoading(true);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
+    if (!code) return;
+    // window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Send code to backend
+    axios
+      .get("http://localhost:5142/auth/callback", { params: { code } })
+      .then((res) => {
+        const { token, user } = res.data;
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        console.log("Backend response:", res.data);
+
+        // Redirect to dashboard after storing token
+        window.location.href = "/dashboard";
+      })
+      .catch((err) => console.error("Login failed:", err));
+  }, []);
+
+  const handleLogin = () => {
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+      CLIENT_ID
+    )}&redirect_uri=${encodeURIComponent(
+      FRONTEND_REDIRECT
+    )}&response_type=code&scope=${encodeURIComponent(
+      "openid email profile"
+    )}&access_type=offline&prompt=consent`;
+    window.location.href = authUrl;
+  };
+
+  const handleAdminLogin = async () => {
+    setError("");
+    console.log("Submitting admin login", username, password);
     try {
-      const res = await login(username, password, selectedRole);
+      const res = await axios.post("http://localhost:5142/auth/adminauth", {
+        username,
+        password,
+      });
 
-      if (res && res.token) {
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("role", selectedRole);
-        localStorage.setItem("user", JSON.stringify(res.user));
-
-        if (selectedRole === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/user-dashboard");
-        }
-      } else {
-        alert("Invalid credentials");
+      if (res.status === 200) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        window.location.href = "/admin";
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      console.error(err);
+      setError("Invalid username or password");
     }
   };
 
-const handleGoogleLoginRedirect = () => {
-  // This URL should match your backend AuthController's /login endpoint
-  window.location.href = "http://localhost:5000/auth/google";
-};
+  const handleAdminClick = () => {
+    setShowAdminForm(true);
+    setShowUser(false);
+  };
 
-
-  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
-    if (!credentialResponse.credential) return;
-
-    setLoading(true);
-
-    try {
-      const res = await googleLogin(credentialResponse.credential);
-//storing jwt token ,role and user
-      if (res && res.token) {
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("role", selectedRole);
-        localStorage.setItem("user", JSON.stringify(res.user));
-
-        if (selectedRole === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/user-dashboard");
-        }
-      } else {
-        alert("Google login failed");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      alert("Google login failed");
-    } finally {
-      setLoading(false);
-    }
+  const handleUserClick = () => {
+    setShowAdminForm(false);
+    setShowUser(true);
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Login</h1>
+      <div style={styles.cardStyle}>
+        <img src={agreeyaLogo} alt="Agreeya Logo" style={styles.logo} />
+        <h1 style={styles.title}>Login</h1>
 
-      {/* Role Toggle */}
-      <div style={styles.roleToggle}>
-        <button
-          onClick={() => setSelectedRole("admin")}
-          style={{
-            ...styles.roleButton,
-            ...(selectedRole === "admin" ? styles.roleButtonActive : {}),
-          }}
-        >
-          Admin
-        </button>
-        <button
-          onClick={() => setSelectedRole("user")}
-          style={{
-            ...styles.roleButton,
-            ...(selectedRole === "user" ? styles.roleButtonActive : {}),
-          }}
-        >
-          User
-        </button>
+        <div style={styles.roleToggle}>
+          <button
+            style={{
+              ...styles.roleButton,
+              backgroundColor: showAdminForm ? "#C41E3A" : "#f0f0f0",
+              color: showAdminForm ? "#fff" : "#666",
+            }}
+            onClick={handleAdminClick}
+          >
+            Admin
+          </button>
+          <button
+            style={{
+              ...styles.roleButton,
+              backgroundColor: showUser ? "#003366" : "#f0f0f0",
+              color: showUser ? "#fff" : "#666",
+            }}
+            onClick={handleUserClick}
+          >
+            User
+          </button>
+        </div>
+
+        {showAdminForm && (
+          <div style={styles.adminForm}>
+            <input
+              type="text"
+              placeholder="Username"
+              style={styles.inputField}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              style={styles.inputField}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p style={styles.errorText}>{error}</p>}
+            <button style={styles.loginButton} onClick={handleAdminLogin}>
+              Login
+            </button>
+          </div>
+        )}
+
+        {showUser && (
+          <button onClick={handleLogin} style={styles.googleButton}>
+            <img src={googleLogo} alt="Google" style={styles.googleIcon} />
+            Sign in with Google
+          </button>
+        )}
       </div>
-{selectedRole === "admin" && (
-     
-      <form onSubmit={handleFormLogin} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          style={styles.input}
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-
-        <button type="submit" style={styles.loginButton} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-  )}
-      <hr style={styles.divider} />
-
-      {/* Google Login Button */}
-      <GoogleLogin
-        onSuccess={handleGoogleLogin}
-        onError={() => alert("Google Login Failed")}
-         useOneTap
-      />
-      {/* <button
-  style={styles.loginButton}
-  onClick={handleGoogleLoginRedirect}
->
-  Login with Google
-</button> */}
     </div>
   );
 };
 
-const styles: { [key: string]: React.CSSProperties } = {
+const styles = {
   container: {
-    maxWidth: 400,
-    margin: "100px auto",
-    padding: 40,
-    border: "1px solid #e0e0e0",
-    borderRadius: 12,
-    boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08)",
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    backgroundColor: "#ffffff",
-    textAlign: "center",
-  },
-  title: {
-    marginBottom: 25,
-    fontSize: 32,
-    fontWeight: 800,
-    color: "#2c3e50",
-  },
-  roleToggle: {
     display: "flex",
     justifyContent: "center",
-    marginBottom: 25,
-    gap: 12,
-  },
+    alignItems: "center",
+    height: "100vh",
+    background: "linear-gradient(135deg, #003366 0%, #C41E3A 100%)",
+  } as React.CSSProperties,
+  cardStyle: {
+    width: "350px",
+    padding: "30px",
+    borderRadius: "15px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+    backgroundColor: "#fff",
+    textAlign: "center",
+  } as React.CSSProperties,
+  title: {
+    marginBottom: "25px",
+    fontSize: "32px",
+    fontWeight: "700",
+    color: "#003366",
+  } as React.CSSProperties,
+  logo: {
+    width: "180px",
+    height: "auto",
+    marginBottom: "20px",
+  } as React.CSSProperties,
+  roleToggle: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "25px",
+  } as React.CSSProperties,
   roleButton: {
     flex: 1,
     padding: "12px 0",
+    borderRadius: "8px",
+    border: "none",
     cursor: "pointer",
-    border: "1px solid #ccc",
-    borderRadius: 8,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
-    color: "#333",
-    transition: "all 0.25s ease",
-  },
-  roleButtonActive: {
-    backgroundColor: "#4e7bbeff",
-    color: "#fff",
-    borderColor: "#4e7bbeff",
-    boxShadow: "0 0 0 2px rgba(78, 123, 190, 0.2)",
+    fontSize: "16px",
     fontWeight: "600",
-  },
-  form: {
+    transition: "all 0.3s ease",
+  } as React.CSSProperties,
+  adminForm: {
     display: "flex",
     flexDirection: "column",
-    gap: 16,
-    marginTop: 10,
-  },
-  input: {
-    padding: 12,
-    fontSize: 16,
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    outline: "none",
-    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-  },
+    gap: "15px",
+    marginBottom: "20px",
+  } as React.CSSProperties,
+  inputField: {
+    padding: "12px 15px",
+    borderRadius: "8px",
+    border: "2px solid #e0e0e0",
+    fontSize: "14px",
+    transition: "border-color 0.3s ease",
+  } as React.CSSProperties,
   loginButton: {
-    padding: "12px 0",
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#fff",
-    backgroundColor: "#4e7bbeff",
+    padding: "12px",
+    borderRadius: "8px",
     border: "none",
-    borderRadius: 8,
+    backgroundColor: "#C41E3A",
+    color: "#fff",
+    fontSize: "16px",
+    fontWeight: "600",
     cursor: "pointer",
     transition: "background-color 0.3s ease",
-  },
-  divider: {
-    margin: "30px 0",
-    border: "none",
-    borderTop: "1px solid #ddd",
-  },
+  } as React.CSSProperties,
+  googleButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+    padding: "12px 20px",
+    width: "100%",
+    borderRadius: "8px",
+    border: "2px solid #003366",
+    backgroundColor: "#fff",
+    fontSize: "16px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+  } as React.CSSProperties,
+  googleIcon: {
+    width: "20px",
+    height: "20px",
+  } as React.CSSProperties,
+  errorText: {
+    color: "#C41E3A",
+    fontSize: "14px",
+    margin: "0",
+    textAlign: "left",
+  } as React.CSSProperties,
 };
 
-export default Login;
+export default LoginPage;
