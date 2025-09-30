@@ -1,7 +1,6 @@
 import React, { useEffect,type CSSProperties } from "react";
 import axios from "axios";
 
-
 const CLIENT_ID = "785596307174-r3f9ad4ftba0fdb9n0asfnq3p9ae5048.apps.googleusercontent.com";
 const FRONTEND_REDIRECT = "http://localhost:5173/login"; // Your React login route
 
@@ -17,6 +16,7 @@ const LoginPage = () => {
     axios
       .get("http://localhost:5142/auth/callback", { params: { code } })
       .then((res) => {
+        debugger;
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
