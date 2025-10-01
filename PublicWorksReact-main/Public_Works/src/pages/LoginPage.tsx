@@ -31,7 +31,7 @@ const LoginPage = () => {
         console.log("Backend response:", res.data);
 
         // Redirect to dashboard after storing token
-        window.location.href = "/dashboard";
+        window.location.href = "/create-issue";
       })
       .catch((err) => console.error("Login failed:", err));
   }, []);
