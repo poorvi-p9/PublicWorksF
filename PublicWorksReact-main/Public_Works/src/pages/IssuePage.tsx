@@ -181,6 +181,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
 
 const IssuePage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  debugger
   const [formData, setFormData] = useState<
     IssueCreateRequest & {
       phoneNumber?: string;

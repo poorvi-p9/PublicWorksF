@@ -1,6 +1,6 @@
 import type { IssueCreateRequest, Category, Priority, Status } from "../types/issue";
 
-const API_BASE = "http://localhost:5000/api/Issue/submit";
+const API_BASE = "http://localhost:5142/api/Issue/submit";
 
 export async function createIssue(data: IssueCreateRequest & { images: File[] }, token: string): Promise<void> {
   const formData = new FormData();
@@ -21,7 +21,7 @@ formData.append("UserId",'1');
     formData.append("images", file); // name must match backend property
   });
 
-  const res = await fetch("http://localhost:5000/api/Issue/submit", {
+  const res = await fetch("http://localhost:5142/api/Issue/submit", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -41,7 +41,7 @@ formData.append("UserId",'1');
 
 export async function getCategories(token: string): Promise<Category[]> {
     debugger
-  const res = await fetch("http://localhost:5000/api/Category", {
+  const res = await fetch("http://localhost:5142/api/Category", {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch categories");

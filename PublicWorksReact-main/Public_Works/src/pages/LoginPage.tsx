@@ -54,8 +54,9 @@ const LoginPage = () => {
         username,
         password,
       });
-
+debugger
       if (res.status === 200) {
+        debugger
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
         window.location.href = "/admin";
