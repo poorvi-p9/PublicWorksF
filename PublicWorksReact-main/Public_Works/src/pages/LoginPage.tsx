@@ -27,7 +27,9 @@ const LoginPage = () => {
         debugger;
         const { token, user } = res.data;
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userId", user.userId); // <-- add this
+localStorage.setItem("user", JSON.stringify(user));
+        //localStorage.setItem("user", JSON.stringify(user));
         console.log("Backend response:", res.data);
 
         // Redirect to dashboard after storing token
@@ -48,9 +50,11 @@ const LoginPage = () => {
   };
 
   const handleAdminLogin = async () => {
+    debugger
     setError("");
     console.log("Submitting admin login", username, password);
     try {
+      debugger
       const res = await axios.post("http://localhost:5142/auth/adminauth", {
         username,
         password,
@@ -58,8 +62,26 @@ const LoginPage = () => {
 debugger
       if (res.status === 200) {
         debugger
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        const { token, user } = res.data;
+
+        if (!token) {
+        setError("Login failed: No token received");
+        return;
+      }
+
+      if (!user) {
+        setError("Login failed: User details missing");
+        console.error("Admin login response:", res.data);
+        return;
+      }
+
+      localStorage.setItem("token", token);
+
+      // Store username as identifier for now
+      localStorage.setItem("userId", user.username); 
+      localStorage.setItem("user", JSON.stringify(user));
+
+        
         window.location.href = "/admin";
       }
     } catch (err: any) {

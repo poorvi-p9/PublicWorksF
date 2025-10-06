@@ -2,10 +2,13 @@ import type { IssueCreateRequest, Category, Priority, Status } from "../types/is
 
 const API_BASE = "http://localhost:5142/api/Issue/submit";
 
-export async function createIssue(data: IssueCreateRequest & { images: File[] }, token: string): Promise<void> {
+// Corrected createIssue to return the created issue object
+export async function createIssue(
+  data: IssueCreateRequest & { images: File[] },
+  token: string
+): Promise<any> {
   const formData = new FormData();
-debugger
-formData.append("UserId",'1');
+  formData.append("UserId", "1"); // Replace with real user ID if needed
   formData.append("CategoryId", data.CategoryId.toString());
   formData.append("priorityId", data.priorityId.toString());
   formData.append("statusId", data.statusId.toString());
@@ -18,14 +21,14 @@ formData.append("UserId",'1');
 
   // Attach images
   data.images.forEach((file) => {
-    formData.append("images", file); // name must match backend property
+    formData.append("images", file); // Must match backend property
   });
 
-  const res = await fetch("http://localhost:5142/api/Issue/submit", {
+  const res = await fetch(API_BASE, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
-      // Don't set Content-Type manually for FormData
+      // Note: Do NOT set Content-Type when using FormData
     },
     body: formData,
   });
@@ -35,12 +38,14 @@ formData.append("UserId",'1');
     console.error("Error submitting issue:", errorText);
     throw new Error(`Failed to create issue: ${res.status} - ${errorText}`);
   }
+
+  // ✅ Return the JSON response
+  const result = await res.json();
+  return result;
 }
 
-// These endpoints assumed - adapt if different
-
+// Fetch categories
 export async function getCategories(token: string): Promise<Category[]> {
-    debugger
   const res = await fetch("http://localhost:5142/api/Category", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -48,6 +53,7 @@ export async function getCategories(token: string): Promise<Category[]> {
   return res.json();
 }
 
+// Fetch priorities
 export async function getPriorities(token: string): Promise<Priority[]> {
   const res = await fetch("http://localhost:5000/api/priorities", {
     headers: { Authorization: `Bearer ${token}` },
@@ -56,6 +62,7 @@ export async function getPriorities(token: string): Promise<Priority[]> {
   return res.json();
 }
 
+// Fetch statuses
 export async function getStatuses(token: string): Promise<Status[]> {
   const res = await fetch("http://localhost:5000/api/statuses", {
     headers: { Authorization: `Bearer ${token}` },
