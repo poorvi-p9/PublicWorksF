@@ -1,0 +1,6 @@
+@import './PreviewModal.css'; /* reuse same modal styles */
+
+.modal-success {
+  color: #52c41a;
+  margin-bottom: 15px;
+}

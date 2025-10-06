@@ -4,17 +4,23 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import Messages from "./pages/Messages";
 import IssuePage from "./pages/IssuePage";
+import MainLayout from "./layouts/MainLayout"; // Make sure this exists
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/messages" element={<Messages/>} />
-        <Route path="/create-issue" element={<IssuePage />} />
+        <Route path="/" element={<LoginPage />} />
+
+        {/* Protected Routes (nested under layout) */}
+        <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/messages" element={<Messages />} />
+          <Route path="/create-issue" element={<IssuePage />} />
+        </Route>
       </Routes>
     </Router>
   );

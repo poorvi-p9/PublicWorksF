@@ -53,7 +53,7 @@
 
 import type { AuthResponse } from '../types/auth';
 
-const API_URL = 'http://localhost:5000/api/auth'; // ✅ Backend base URL
+const API_URL = 'http://localhost:5142/api/auth'; // ✅ Backend base URL
 
 // ✅ Normal login with username/password/role
 export const login = async (
@@ -69,6 +69,7 @@ export const login = async (
   });
 
   if (!response.ok) {
+    debugger
     const errorText = await response.text();
     throw new Error(`Login failed: ${errorText}`);
   }
