@@ -393,7 +393,7 @@ const IssuePage: React.FC = () => {
       const imagesToUpload = formData.images.filter((img): img is File => img !== null);
       const payload = { ...formData, images: imagesToUpload };
 
-      const result = await createIssue(payload);
+      const result = await createIssue(payload, token);
       const newId = result?.id ?? result?.issueId ?? 0;
       const catName = categories.find((c) => c.categoryId === formData.CategoryId)?.name ?? "Unknown";
 

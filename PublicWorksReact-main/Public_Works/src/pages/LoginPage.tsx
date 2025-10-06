@@ -24,11 +24,9 @@ const LoginPage = () => {
     axios
       .get("http://localhost:5142/auth/callback", { params: { code } })
       .then((res) => {
-        debugger;
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
-        console.log("Backend response:", res.data);
 
         // Redirect to dashboard after storing token
         window.location.href = "/create-issue";

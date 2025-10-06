@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard: React.FC = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [issues, setIssues] = useState<any[]>([]);   //array of all issues from the backend.
   const [stats, setStats] = useState({
     total: 0,
@@ -14,84 +14,84 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-   const handleLogout = () => {
-    localStorage.clear(); 
-    navigate("/login");   
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
   };
 
   const API_BASE_URL = "http://localhost:5142/api";
 
-//   useEffect(() => {
-//     fetchIssues();
-//   }, []);
+  //   useEffect(() => {
+  //     fetchIssues();
+  //   }, []);
 
-//   const fetchIssues = async () => {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/Issue`);
-//       if (!response.ok) throw new Error("Failed to fetch issues");
-//       const data = await response.json();
-//       setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
-//       calculateStats(data);
-//     } catch (err: any) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+  //   const fetchIssues = async () => {
+  //     try {
+  //       const response = await fetch(`${API_BASE_URL}/Issue`);
+  //       if (!response.ok) throw new Error("Failed to fetch issues");
+  //       const data = await response.json();
+  //       setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
+  //       calculateStats(data);
+  //     } catch (err: any) {
+  //       setError(err.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-//   const calculateStats = (data: any[]) => {
-//     setStats({
-//       total: data.length,
-//       pending: data.filter((i) => i.statusId === 1).length,
-//       inProgress: data.filter((i) => i.statusId === 2).length,
-//       resolved: data.filter((i) => i.statusId === 3).length,
-//       highPriority: data.filter((i) => i.priorityId === 3).length,
-//     });
-//   };
-// Remove the calculateStats function entirely
+  //   const calculateStats = (data: any[]) => {
+  //     setStats({
+  //       total: data.length,
+  //       pending: data.filter((i) => i.statusId === 1).length,
+  //       inProgress: data.filter((i) => i.statusId === 2).length,
+  //       resolved: data.filter((i) => i.statusId === 3).length,
+  //       highPriority: data.filter((i) => i.priorityId === 3).length,
+  //     });
+  //   };
+  // Remove the calculateStats function entirely
 
-    const fetchIssues = async () => {
+  const fetchIssues = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/Issue`);
-        if (!response.ok) throw new Error("Failed to fetch issues");
-        const data = await response.json();
-        setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
+      const response = await fetch(`${API_BASE_URL}/Issue`);
+      if (!response.ok) throw new Error("Failed to fetch issues");
+      const data = await response.json();
+      setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
     } catch (err: any) {
-        setError(err.message);
+      setError(err.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    };
+  };
 
-    const fetchStats = async () => {
+  const fetchStats = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/Issue/summary`);
-        if (!response.ok) throw new Error("Failed to fetch summary");
-        const data = await response.json();
-        setStats({
+      const response = await fetch(`${API_BASE_URL}/Issue/summary`);
+      if (!response.ok) throw new Error("Failed to fetch summary");
+      const data = await response.json();
+      setStats({
         total: data.totalIssues,
         pending: data.pending,
         inProgress: data.inProgress,
         resolved: data.resolved,
         highPriority: data.highPriority || 0, // If you want highPriority, add it to backend
-        });
+      });
     } catch (err: any) {
-        setError(err.message);
+      setError(err.message);
     }
-    };
+  };
 
-    // Call both functions on component mount
-    useEffect(() => {
+  // Call both functions on component mount
+  useEffect(() => {
     fetchIssues();
     fetchStats();
-    }, []);
+  }, []);
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
         justifyContent: "center",
         background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)"
       }}>
@@ -113,21 +113,21 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div style={{ 
+    <div style={{
       minHeight: "100vh",
       background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)",
       padding: "40px 30px",
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
     }}>
       {/* Header */}
-      <div style={{ 
-        maxWidth: "1400px", 
+      <div style={{
+        maxWidth: "1400px",
         margin: "0 auto",
         marginBottom: "40px"
       }}>
-        <div style={{ 
-          display: "flex", 
-          alignItems: "center", 
+        <div style={{
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
           marginBottom: "10px"
         }}>
@@ -139,17 +139,17 @@ const AdminDashboard: React.FC = () => {
               boxShadow: "0 4px 6px rgba(30, 58, 138, 0.2)"
             }}>
               <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
-                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
-                  stroke="white" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  fill="none"/>
+                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none" />
               </svg>
             </div>
             <div>
-              <h1 style={{ 
-                fontSize: "32px", 
+              <h1 style={{
+                fontSize: "32px",
                 fontWeight: "700",
                 background: "linear-gradient(135deg, #1e3a8a 0%, #b91c1c 100%)",
                 WebkitBackgroundClip: "text",
@@ -158,16 +158,16 @@ const AdminDashboard: React.FC = () => {
               }}>
                 AGREEYA Dashboard
               </h1>
-              <p style={{ 
-                margin: "4px 0 0 0", 
-                color: "#64748b", 
-                fontSize: "14px" 
+              <p style={{
+                margin: "4px 0 0 0",
+                color: "#64748b",
+                fontSize: "14px"
               }}>
                 Public Works Management System
               </p>
             </div>
           </div>
-          
+
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
             <button
               onClick={handleLogout}
@@ -200,7 +200,7 @@ const AdminDashboard: React.FC = () => {
               </svg>
               Logout
             </button>
-            
+
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -217,17 +217,17 @@ const AdminDashboard: React.FC = () => {
                 onFocus={(e) => e.target.style.borderColor = "#1e3a8a"}
                 onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
               />
-              <svg 
-                style={{ 
-                  position: "absolute", 
-                  left: "12px", 
-                  top: "50%", 
+              <svg
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
                   transform: "translateY(-50%)",
                   width: "18px",
                   height: "18px"
-                }} 
-                fill="none" 
-                stroke="#94a3b8" 
+                }}
+                fill="none"
+                stroke="#94a3b8"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -236,7 +236,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Error Message */}
         {error && (
@@ -308,9 +308,9 @@ const AdminDashboard: React.FC = () => {
                 borderRadius: "50%"
               }}></div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <h3 style={{ 
-                  margin: 0, 
-                  fontSize: "14px", 
+                <h3 style={{
+                  margin: 0,
+                  fontSize: "14px",
                   fontWeight: "600",
                   color: "#64748b",
                   textTransform: "uppercase",
@@ -329,8 +329,8 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <p style={{ 
-                fontSize: "36px", 
+              <p style={{
+                fontSize: "36px",
                 fontWeight: "700",
                 background: card.gradient,
                 WebkitBackgroundClip: "text",
@@ -355,23 +355,23 @@ const AdminDashboard: React.FC = () => {
             padding: "20px 30px",
             color: "white"
           }}>
-            <h2 style={{ 
-              margin: 0, 
-              fontSize: "20px", 
+            <h2 style={{
+              margin: 0,
+              fontSize: "20px",
               fontWeight: "600",
               letterSpacing: "0.5px"
             }}>
               Recent Issues
             </h2>
-            <p style={{ 
-              margin: "4px 0 0 0", 
-              fontSize: "14px", 
-              opacity: "0.9" 
+            <p style={{
+              margin: "4px 0 0 0",
+              fontSize: "14px",
+              opacity: "0.9"
             }}>
               Sorted from newest to oldest
             </p>
           </div>
-          
+
           <div style={{ overflowX: "auto" }}>
             <table style={{
               width: "100%",
@@ -380,6 +380,7 @@ const AdminDashboard: React.FC = () => {
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                   <th style={{ ...thStyle, width: "60px" }}>#</th>
+                  <th style={{ ...thStyle, width: "60px "}}>Category</th>
                   <th style={{ ...thStyle, textAlign: "left" }}>Description</th>
                   <th style={{ ...thStyle, width: "140px" }}>Priority</th>
                   <th style={{ ...thStyle, width: "140px" }}>Status</th>
@@ -398,9 +399,9 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 ) : (
                   issues.map((issue, idx) => (
-                    <tr 
-                      key={issue.issueId} 
-                      style={{ 
+                    <tr
+                      key={issue.issueId}
+                      style={{
                         borderBottom: "1px solid #f1f5f9",
                         transition: "background-color 0.2s ease"
                       }}
@@ -410,10 +411,13 @@ const AdminDashboard: React.FC = () => {
                       <td style={{ ...tdStyle, textAlign: "center", fontWeight: "600", color: "#64748b" }}>
                         {idx + 1}
                       </td>
+                      <td style={{ ...tdStyle, color: "#334155", textAlign: "center" }}>
+                        {issue.categoryId || "N/A"}
+                      </td>
                       <td style={{ ...tdStyle, color: "#334155" }}>
-                        <div style={{ 
-                          maxWidth: "500px", 
-                          overflow: "hidden", 
+                        <div style={{
+                          maxWidth: "500px",
+                          overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap"
                         }}>
@@ -427,11 +431,11 @@ const AdminDashboard: React.FC = () => {
                           fontSize: "13px",
                           fontWeight: "600",
                           display: "inline-block",
-                          ...(issue.priorityId === 3 
+                          ...(issue.priorityId === 3
                             ? { background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" }
-                            : issue.priorityId === 2 
-                            ? { background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", color: "#92400e" }
-                            : { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" })
+                            : issue.priorityId === 2
+                              ? { background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", color: "#92400e" }
+                              : { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" })
                         }}>
                           {issue.priorityId === 3 ? "High" : issue.priorityId === 2 ? "Medium" : "Low"}
                         </span>
@@ -443,11 +447,11 @@ const AdminDashboard: React.FC = () => {
                           fontSize: "13px",
                           fontWeight: "600",
                           display: "inline-block",
-                          ...(issue.statusId === 3 
+                          ...(issue.statusId === 3
                             ? { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" }
-                            : issue.statusId === 2 
-                            ? { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" }
-                            : { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" })
+                            : issue.statusId === 2
+                              ? { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" }
+                              : { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" })
                         }}>
                           {issue.statusId === 1 ? "Pending" : issue.statusId === 2 ? "In Progress" : "Resolved"}
                         </span>
@@ -467,15 +471,15 @@ const AdminDashboard: React.FC = () => {
                           </button>
                           <button
                             style={{
-                                ...btnStyle,
-                                background: "linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)",
+                              ...btnStyle,
+                              background: "linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)",
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
                             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
                             onClick={() => navigate(`/admin/messages?issueId=${issue.issueId}`)}
-                            >
+                          >
                             Message
-                            </button>
+                          </button>
                         </div>
                       </td>
                     </tr>
