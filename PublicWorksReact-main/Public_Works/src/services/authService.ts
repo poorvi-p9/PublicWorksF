@@ -69,7 +69,6 @@ export const login = async (
   });
 
   if (!response.ok) {
-    debugger
     const errorText = await response.text();
     throw new Error(`Login failed: ${errorText}`);
   }

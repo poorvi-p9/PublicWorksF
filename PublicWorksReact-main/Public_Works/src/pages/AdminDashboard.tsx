@@ -1,9 +1,117 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAuthRole, getAuthToken } from "../utils/auth";
+import type { Priority } from "../types/issue";
+import MessageModal from "../components/MessageModal";
+import { RemarksModal } from "../components/RemarksModal";
+
+
+interface Status {
+  statusId: number;
+  name: string;
+  description: string;
+}
+interface Category {
+  categoryId: number;
+  name: string;
+  description: string;
+}
 
 const AdminDashboard: React.FC = () => {
+  // State for map popup
+  const [mapOpen, setMapOpen] = useState(false);
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // State for image viewer
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadingImages, setLoadingImages] = useState(false);
+
+  // Open map popup for given lat/lng
+  const handleShowMap = (lat: number, lng: number) => {
+    setMapCoords({ lat, lng });
+    setMapOpen(true);
+  };
+
+  // Close map popup
+  const handleCloseMap = () => {
+    setMapOpen(false);
+    setMapCoords(null);
+  };
+
+  // Fetch and display images for an issue
+  const handleViewImages = async (issueId: number) => {
+    setLoadingImages(true);
+    try {
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Issue/${issueId}/images`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch images");
+      const data = await response.json();
+      console.log("Raw API response:", data);
+      
+      if (data && data.length > 0) {
+        const imagePaths = data.map((img: any) => `http://localhost:5142${img.imagePath}`);
+        console.log("Constructed image URL:", imagePaths); 
+        setCurrentImages(imagePaths);
+        setCurrentImageIndex(0);
+        setImageViewerOpen(true);
+      } else {  
+        alert("No images available for this issue");
+      }
+    } catch (err: any) {
+      console.error("Failed to load images:", err);
+      alert("Failed to load images");
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  // Close image viewer
+  const handleCloseImageViewer = () => {
+    setImageViewerOpen(false);
+    setCurrentImages([]);
+    setCurrentImageIndex(0);
+  };
+
+  // Navigate to next image
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % currentImages.length);
+  };
+
+  // Navigate to previous image
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length);
+  };
   const navigate = useNavigate();
-  const [issues, setIssues] = useState<any[]>([]);   //array of all issues from the backend.
+  const [statuses, setStatuses] = useState<Status[]>([]);
+  const [priorities, setPriorities] = useState<Priority[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [issues, setIssues] = useState<any[]>([]);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isRemarksModalOpen, setIsRemarksModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+
+  
+
+  // Get admin email from localStorage or auth context
+  const adminEmail: string = localStorage.getItem('userEmail') || "";
+
+  const handleMessageClick = (issue: any) => {
+  setSelectedIssue(issue);
+  setIsMessageModalOpen(true);
+  };
+
+  const handleRemarksClick = (issue: any) => {
+    setSelectedIssue(issue);
+    setIsRemarksModalOpen(true);
+  };
+  // Filter state
+  const [filterStatus, setFilterStatus] = useState<number | "">("");
+  const [filterPriority, setFilterPriority] = useState<number | "">("");
+  const [filterLoading, setFilterLoading] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -15,57 +123,109 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    localStorage.clear(); 
+    navigate("/login");   
   };
 
   const API_BASE_URL = "http://localhost:5142/api";
 
-  //   useEffect(() => {
-  //     fetchIssues();
-  //   }, []);
-
-  //   const fetchIssues = async () => {
-  //     try {
-  //       const response = await fetch(`${API_BASE_URL}/Issue`);
-  //       if (!response.ok) throw new Error("Failed to fetch issues");
-  //       const data = await response.json();
-  //       setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
-  //       calculateStats(data);
-  //     } catch (err: any) {
-  //       setError(err.message);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   const calculateStats = (data: any[]) => {
-  //     setStats({
-  //       total: data.length,
-  //       pending: data.filter((i) => i.statusId === 1).length,
-  //       inProgress: data.filter((i) => i.statusId === 2).length,
-  //       resolved: data.filter((i) => i.statusId === 3).length,
-  //       highPriority: data.filter((i) => i.priorityId === 3).length,
-  //     });
-  //   };
-  // Remove the calculateStats function entirely
-
-  const fetchIssues = async () => {
+  const fetchStatuses = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Issue`);
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Status/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch statuses");
+      const data = await response.json();
+      console.log("Fetched statuses:", data); // Debug log
+      setStatuses(data);
+    } catch (err: any) {
+      console.error("Failed to load statuses:", err);
+    }
+  };
+
+  const fetchPriorities = async () => {
+    try {
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Priority/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch statuses");
+      const data = await response.json();
+      console.log("Fetched Priorities:", data); // Debug log
+      setPriorities(data);
+    } catch (err: any) {
+      console.error("Failed to load Priorities:", err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Category/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch categories");
+      const data = await response.json();
+      console.log("Fetched Categories:", data);
+      setCategories(data);
+    } catch (err: any) {
+      console.error("Failed to load categories:", err);
+    }
+  };
+
+  // Fetch issues, optionally with filters
+  const fetchIssues = async (statusId?: number | "", priorityId?: number | "") => {
+    try {
+      setFilterLoading(true);
+      let url = `${API_BASE_URL}/Issue`;
+      const params: string[] = [];
+      if (statusId) params.push(`statusId=${statusId}`);
+      if (priorityId) params.push(`priorityId=${priorityId}`);
+      if (params.length > 0) url += `?${params.join("&")}`;
+      const token = getAuthToken() || "";
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!response.ok) throw new Error("Failed to fetch issues");
       const data = await response.json();
-      setIssues(data.sort((a: any, b: any) => b.issueId - a.issueId));
+      // console.log("Raw API Issue Response:", data[0]);
+      const issues = data.map((issue: any) => {
+        const match = issue.location && issue.location.match(/POINT \(([-\d.]+) ([-\d.]+)\)/);
+        return {
+          ...issue,
+          categoryId: issue.issueCategoryId,
+          latitude: match ? parseFloat(match[2]) : null,
+          longitude: match ? parseFloat(match[1]) : null,
+        };
+      });
+      setIssues(issues.sort((a: any, b: any) => b.issueId - a.issueId));
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setFilterLoading(false);
     }
+  };
+
+  // Handle filter apply
+  const handleApplyFilter = () => {
+    fetchIssues(filterStatus, filterPriority);
+  };
+
+  // Handle filter reset
+  const handleResetFilter = () => {
+    setFilterStatus("");
+    setFilterPriority("");
+    fetchIssues();
   };
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Issue/summary`);
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Issue/summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!response.ok) throw new Error("Failed to fetch summary");
       const data = await response.json();
       setStats({
@@ -73,18 +233,134 @@ const AdminDashboard: React.FC = () => {
         pending: data.pending,
         inProgress: data.inProgress,
         resolved: data.resolved,
-        highPriority: data.highPriority || 0, // If you want highPriority, add it to backend
+        highPriority: data.highPriority || 0,
       });
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  // Call both functions on component mount
+  const getStatusClass = (statusId: number) => {
+    if (statusId === 3) return { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" };
+    if (statusId === 2) return { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" };
+    return { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" };
+  };
+
+  const getPriorityClass = (priorityId: number) => {
+    if (priorityId === 3) return { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" };
+    if (priorityId === 2) return { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" };
+    return { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" };
+  };
+
+  const getCategoryClass = (categoryId: number) => {
+  if (categoryId === 1) return { background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", color: "#92400e" };
+  if (categoryId === 2) return { background: "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)", color: "#581c87" };
+  if (categoryId === 3) return { background: "linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)", color: "#7c2d12" };
+  return { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" };
+};
+
+  const handleStatusChange = async (issueId: number, newStatusId: number) => {
+    try {
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Issue/update-issue/${issueId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ statusId: newStatusId }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update status");
+
+      // Update local state
+      setIssues(issues.map(issue => 
+        issue.issueId === issueId 
+          ? { ...issue, statusId: newStatusId } 
+          : issue
+      ));
+
+      // Refresh stats
+      fetchStats();
+    } catch (err: any) {
+      alert(`Error updating status: ${err.message}`);
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  const handlePriorityChange = async (issueId: number, newPriorityId: number) => {
+    try {
+      const token = getAuthToken() || "";
+      const response = await fetch(`${API_BASE_URL}/Issue/update-issue/${issueId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ priorityId: newPriorityId }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update status");
+
+      // Update local state
+      setIssues(issues.map(issue => 
+        issue.issueId === issueId 
+          ? { ...issue, priorityId: newPriorityId } 
+          : issue
+      ));
+
+      // Refresh stats
+      fetchStats();
+    } catch (err: any) {
+      alert(`Error updating status: ${err.message}`);
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  
+
   useEffect(() => {
+    const roleId = getAuthRole();
+    if (roleId !== 1) {
+      setError("NOT AUTHORIZED");
+    }
+    fetchStatuses();
+    fetchPriorities();
+    fetchCategories();
     fetchIssues();
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    console.log("Current statuses state:", statuses);
+    console.log("Current issues state:", issues);
+  }, [statuses, issues]);
+
+
+  if (error === "NOT AUTHORIZED") {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)"
+      }}>
+        <div style={{
+          background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
+          border: "2px solid #ef4444",
+          color: "#991b1b",
+          padding: "32px 40px",
+          borderRadius: "16px",
+          boxShadow: "0 4px 12px rgba(239, 68, 68, 0.12)",
+          fontSize: "22px",
+          fontWeight: 700
+        }}>
+          NOT AUTHORIZED
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -167,8 +443,8 @@ const AdminDashboard: React.FC = () => {
               </p>
             </div>
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
+          
+          {/* <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
             <button
               onClick={handleLogout}
               style={{
@@ -233,7 +509,7 @@ const AdminDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -262,6 +538,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+       
         {/* Stats Cards */}
         <div style={{
           display: "grid",
@@ -343,6 +620,81 @@ const AdminDashboard: React.FC = () => {
           ))}
         </div>
 
+         {/* Filter Tab */}
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+          padding: "18px 24px",
+          marginBottom: "32px",
+          display: "flex",
+          alignItems: "center",
+          gap: "18px",
+          flexWrap: "wrap"
+        }}>
+          <span style={{ fontWeight: 600, color: "#1e3a8a", fontSize: "15px" }}>Filter Issues:</span>
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value ? Number(e.target.value) : "")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1.5px solid #e2e8f0",
+              fontSize: "14px",
+              minWidth: "140px"
+            }}
+          >
+            <option value="">All Statuses</option>
+            {statuses.map(status => (
+              <option key={status.statusId} value={status.statusId}>{status.name}</option>
+            ))}
+          </select>
+          <select
+            value={filterPriority}
+            onChange={e => setFilterPriority(e.target.value ? Number(e.target.value) : "")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1.5px solid #e2e8f0",
+              fontSize: "14px",
+              minWidth: "140px"
+            }}
+          >
+            <option value="">All Priorities</option>
+            {priorities.map(priority => (
+              <option key={priority.priorityId} value={priority.priorityId}>{priority.name}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleApplyFilter}
+            style={{
+              ...btnStyle,
+              background: "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "14px",
+              padding: "8px 20px"
+            }}
+            disabled={filterLoading}
+          >
+            {filterLoading ? "Filtering..." : "Apply Filter"}
+          </button>
+          <button
+            onClick={handleResetFilter}
+            style={{
+              ...btnStyle,
+              background: "#e5e7eb",
+              color: "#1e3a8a",
+              fontWeight: 600,
+              fontSize: "14px",
+              padding: "8px 20px"
+            }}
+            disabled={filterLoading}
+          >
+            Reset
+          </button>
+        </div>
+
         {/* Issues Table */}
         <div style={{
           background: "white",
@@ -379,11 +731,15 @@ const AdminDashboard: React.FC = () => {
             }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                  <th style={{ ...thStyle, width: "60px" }}>#</th>
-                  <th style={{ ...thStyle, width: "60px "}}>Category</th>
+                  <th style={{ ...thStyle, width: "140px" }}>Category</th> 
+                  <th style={{ ...thStyle, width: "60px" }}>Date</th>
                   <th style={{ ...thStyle, textAlign: "left" }}>Description</th>
+                  <th style={{ ...thStyle, width: "60px" }}>image</th>
+                  
+                  
+                  <th style={{ ...thStyle, width: "120px" }}>Location</th> 
                   <th style={{ ...thStyle, width: "140px" }}>Priority</th>
-                  <th style={{ ...thStyle, width: "140px" }}>Status</th>
+                  <th style={{ ...thStyle, width: "160px" }}>Status</th>
                   <th style={{ ...thStyle, width: "220px" }}>Action</th>
                 </tr>
               </thead>
@@ -408,12 +764,46 @@ const AdminDashboard: React.FC = () => {
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f8fafc"}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                     >
-                      <td style={{ ...tdStyle, textAlign: "center", fontWeight: "600", color: "#64748b" }}>
-                        {idx + 1}
+                      
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        {categories.length > 0 ? (
+                          <span style={{
+                            padding: "6px 16px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            display: "inline-block",
+                            ...getCategoryClass(issue.categoryId)
+                          }}>
+                            {categories.find(cat => cat.categoryId === issue.categoryId)?.name || "Unknown"}
+                          </span>
+                        ) : (
+                          <span style={{
+                            padding: "6px 16px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            display: "inline-block",
+                            ...getCategoryClass(issue.categoryId)
+                          }}>
+                            Loading...
+                          </span>
+                        )}
                       </td>
-                      <td style={{ ...tdStyle, color: "#334155", textAlign: "center" }}>
-                        {issue.categoryId || "N/A"}
+
+                      {/* date */}
+                       <td style={{ ...tdStyle, color: "#334155", textAlign: "center" }}>
+                        {issue.createdAt 
+                          ? new Date(issue.createdAt).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              // hour: "2-digit",
+                              // minute: "2-digit"
+                            })
+                          : "-"}
                       </td>
+                      {/* Description */}
                       <td style={{ ...tdStyle, color: "#334155" }}>
                         <div style={{
                           maxWidth: "500px",
@@ -425,36 +815,220 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign: "center" }}>
-                        <span style={{
-                          padding: "6px 16px",
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          display: "inline-block",
-                          ...(issue.priorityId === 3
-                            ? { background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" }
-                            : issue.priorityId === 2
-                              ? { background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", color: "#92400e" }
-                              : { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" })
-                        }}>
-                          {issue.priorityId === 3 ? "High" : issue.priorityId === 2 ? "Medium" : "Low"}
-                        </span>
+                        <button
+                          onClick={() => handleViewImages(issue.issueId)}
+                          style={{
+                            padding: "6px 12px",
+                            background: "#3b82f6",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                          }}
+                          disabled={loadingImages}
+                        >
+                          {loadingImages ? "Loading..." : "View"}
+                        </button>
+                      </td>
+                      {/* Image Viewer Modal */}
+                      {imageViewerOpen && (
+                        <div
+                          style={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background: "rgba(0,0,0,0.7)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000
+                          }}
+                        >
+                          <div
+                            style={{
+                              position: "relative",
+                              background: "#fff",
+                              padding: "20px",
+                              borderRadius: "12px",
+                              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+                              maxWidth: "90vw",
+                              maxHeight: "90vh"
+                            }}
+                          >
+                            <img
+                              src={currentImages[currentImageIndex]}
+                              alt="Issue"
+                              onError={(e) => {
+                                console.error("Image failed to load:", currentImages[currentImageIndex]);
+                                console.error("Error event:", e);
+                              }}
+                              onLoad={() => console.log("Image loaded successfully:", currentImages[currentImageIndex])}
+                              style={{
+                                maxWidth: "80vw",
+                                maxHeight: "80vh",
+                                objectFit: "contain",
+                                borderRadius: "8px"
+                              }}
+                            />
+
+                            {/* Close Button */}
+                            <button
+                              onClick={handleCloseImageViewer}
+                              style={{
+                                position: "absolute",
+                                top: "10px",
+                                right: "10px",
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                padding: "8px 14px",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontWeight: "600"
+                              }}
+                            >
+                              ✕ Close
+                            </button>
+
+                            {/* Prev / Next Buttons */}
+                            {currentImages.length > 1 && (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginTop: "12px"
+                                }}
+                              >
+                                <button
+                                  onClick={handlePrevImage}
+                                  style={{
+                                    padding: "6px 14px",
+                                    border: "1px solid #64748b",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    background: "#f1f5f9"
+                                  }}
+                                >
+                                  ← Prev
+                                </button>
+
+                                <button
+                                  onClick={handleNextImage}
+                                  style={{
+                                    padding: "6px 14px",
+                                    border: "1px solid #64748b",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    background: "#f1f5f9"
+                                  }}
+                                >
+                                  Next →
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+
+                     
+
+                      
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        {(issue.latitude && issue.longitude) ? (
+                          <button
+                            style={{
+                              ...btnStyle,
+                              background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                              padding: "6px 16px",
+                              fontSize: "13px"
+                            }}
+                            onClick={() => handleShowMap(issue.latitude, issue.longitude)}
+                          >
+                            View Map
+                          </button>
+                        ) : (
+                          <span style={{ color: '#64748b', fontSize: '13px' }}>N/A</span>
+                        )}
+                      </td>
+                      
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        {priorities.length > 0 ? (
+                          <select
+                            value={issue.priorityId}
+                            onChange={(e) => handlePriorityChange(issue.issueId, parseInt(e.target.value))}
+                            style={{
+                              padding: "6px 16px",
+                              borderRadius: "20px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              border: "none",
+                              cursor: "pointer",
+                              outline: "none",
+                              appearance: "auto",
+                              WebkitAppearance: "menulist",
+                              ...getPriorityClass(issue.priorityId)
+                            }}
+                          >
+                            {priorities.map((priority) => (
+                              <option key={priority.priorityId} value={priority.priorityId}>
+                                {priority.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span style={{
+                            padding: "6px 16px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            display: "inline-block",
+                            ...getStatusClass(issue.statusId)
+                          }}>
+                            Loading...
+                          </span>
+                        )}
                       </td>
                       <td style={{ ...tdStyle, textAlign: "center" }}>
-                        <span style={{
-                          padding: "6px 16px",
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          display: "inline-block",
-                          ...(issue.statusId === 3
-                            ? { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" }
-                            : issue.statusId === 2
-                              ? { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" }
-                              : { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" })
-                        }}>
-                          {issue.statusId === 1 ? "Pending" : issue.statusId === 2 ? "In Progress" : "Resolved"}
-                        </span>
+                        {statuses.length > 0 ? (
+                          <select
+                            value={issue.statusId}
+                            onChange={(e) => handleStatusChange(issue.issueId, parseInt(e.target.value))}
+                            style={{
+                              padding: "6px 16px",
+                              borderRadius: "20px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              border: "none",
+                              cursor: "pointer",
+                              outline: "none",
+                              appearance: "auto",
+                              WebkitAppearance: "menulist",
+                              ...getStatusClass(issue.statusId)
+                            }}
+                          >
+                            {statuses.map((status) => (
+                              <option key={status.statusId} value={status.statusId}>
+                                {status.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span style={{
+                            padding: "6px 16px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            display: "inline-block",
+                            ...getStatusClass(issue.statusId)
+                          }}>
+                            Loading...
+                          </span>
+                        )}
                       </td>
                       <td style={{ ...tdStyle, textAlign: "center" }}>
                         <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
@@ -465,7 +1039,7 @@ const AdminDashboard: React.FC = () => {
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
                             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                            onClick={() => alert(`Remarks for Issue #${issue.issueId}`)}
+                            onClick={() => handleRemarksClick(issue)}
                           >
                             Remarks
                           </button>
@@ -476,15 +1050,105 @@ const AdminDashboard: React.FC = () => {
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
                             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                            onClick={() => navigate(`/admin/messages?issueId=${issue.issueId}`)}
-                          >
+                            onClick={() => handleMessageClick(issue)}
+                            >
                             Message
-                          </button>
+                            </button>
+                          {/* Message Modal */}
+                          <MessageModal
+                            isOpen={isMessageModalOpen}
+                            onClose={() => setIsMessageModalOpen(false)}
+                            issueId={selectedIssue?.issueId}
+                            userId={selectedIssue?.userId}
+                            adminEmail={adminEmail}
+                          />
+
+                          {/* Remarks Modal */}
+                          <RemarksModal
+                            isOpen={isRemarksModalOpen}
+                            onClose={() => setIsRemarksModalOpen(false)}
+                            issueId={selectedIssue?.issueId}
+                            adminEmail={adminEmail}
+                          />
                         </div>
                       </td>
                     </tr>
                   ))
                 )}
+      {/* Map Popup */}
+      {mapOpen && mapCoords && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.35)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            padding: '24px',
+            minWidth: '350px',
+            minHeight: '350px',
+            position: 'relative',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}>
+            <button
+              onClick={handleCloseMap}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                fontSize: '18px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(239,68,68,0.18)'
+              }}
+              title="Close"
+            >
+              ×
+            </button>
+            <h3 style={{ margin: '0 0 12px 0', color: '#1e3a8a', fontWeight: 700 }}>Issue Location</h3>
+            <div style={{ width: '320px', height: '320px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <iframe
+                title="Map View"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 0 }}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lng-0.01}%2C${mapCoords.lat-0.01}%2C${mapCoords.lng+0.01}%2C${mapCoords.lat+0.01}&layer=mapnik&marker=${mapCoords.lat}%2C${mapCoords.lng}`}
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div style={{ marginTop: '10px', color: '#64748b', fontSize: '13px' }}>
+              Lat: {mapCoords.lat}, Lng: {mapCoords.lng}
+            </div>
+            <a
+              href={`https://www.openstreetmap.org/?mlat=${mapCoords.lat}&mlon=${mapCoords.lng}#map=18/${mapCoords.lat}/${mapCoords.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginTop: '8px', color: '#2563eb', fontSize: '13px', textDecoration: 'underline' }}
+            >
+              View on OpenStreetMap
+            </a>
+          </div>
+        </div>
+      )}
               </tbody>
             </table>
           </div>

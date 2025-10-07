@@ -4,7 +4,10 @@ export const setAuthData = (token: string, role: string) => {
 };
 
 export const getAuthToken = () => localStorage.getItem('token');
-export const getAuthRole = () => localStorage.getItem('role');
+export const getAuthRole = () => {
+  const user = JSON.parse(localStorage.getItem('user')|| "0");
+  return user.roleId;
+};
 export const clearAuthData = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('role');
