@@ -1,133 +1,124 @@
 .issue-page-container {
-  max-width: 700px;
-  margin: 40px auto;
-  padding: 30px;
-  background-color: #f9faff;
-  border-radius: 15px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: "Inter", sans-serif;
 }
 
 .issue-page-container h1 {
   text-align: center;
-  margin-bottom: 20px;
+  color: #333;
+  margin-bottom: 1.5rem;
 }
 
-.issue-form .label {
+.label {
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .label-text {
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 0.5rem;
 }
 
 .input, .select, .textarea {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #d9d9d9;
-  font-size: 14px;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
 }
 
 .textarea {
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
 }
 
 .lat-lng-container {
   display: flex;
-  gap: 15px;
-  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.images-section {
+  margin: 1rem 0;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.camera-button, .file-button, .cancel-camera {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+
+  
+}
+
+.camera-button:hover, .file-button:hover, .cancel-camera:hover {
+  background-color: #004d99;
 }
 
 .images-container {
   display: flex;
-  gap: 10px;
-  margin: 15px 0;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .image-slot {
-  position: relative;
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #fafafa;
 }
 
 .image-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 .image-empty {
-  width: 100%;
-  height: 100%;
-  border: 1px dashed #d9d9d9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  border-radius: 6px;
-  background-color: #fafafa;
+  color: #aaa;
+  font-size: 0.9rem;
 }
 
-.file-input {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  cursor: pointer;
+.error-text {
+  color: #d9534f;
+  text-align: center;
+  margin-top: 0.5rem;
 }
 
 .submit-button {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  background-color: #1890ff;
+  background-color: #28a745;
   color: white;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border-radius: 10px;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: 0.3s;
 }
 
 .submit-button:hover {
-  background-color: #40a9ff;
-}
-
-.error-text {
-  color: #ff4d4f;
-  font-weight: 600;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-
-.metadata-modal {
-  position: fixed;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 20px;
-  border: 1px solid #ddd;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  max-height: 70vh;
-  overflow-y: auto;
-  z-index: 9999;
-  width: 400px;
-}
-.metadata-modal ul {
-  list-style: none;
-  padding: 0;
-}
-.metadata-modal li {
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-.metadata-modal h3 {
-  margin-top: 0;
+  background-color: #218838;
 }

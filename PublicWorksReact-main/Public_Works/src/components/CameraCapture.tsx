@@ -12,18 +12,26 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let activeStream: MediaStream | null = null;
+
     async function startCamera() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        activeStream = mediaStream;
         if (videoRef.current) videoRef.current.srcObject = mediaStream;
         setStream(mediaStream);
       } catch {
         setError("Camera access denied or not available.");
       }
     }
+
     startCamera();
+
+    // Cleanup on unmount
     return () => {
-      if (stream) stream.getTracks().forEach((track) => track.stop());
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
@@ -33,12 +41,20 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
     canvas.toBlob((blob) => {
       if (blob) onCapture(blob);
     }, "image/jpeg");
+
+    // Stop camera after capture
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
   };
 
   if (error) return <div className="camera-error">{error}</div>;
@@ -46,7 +62,9 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture }) => {
   return (
     <div className="camera-container">
       <video ref={videoRef} autoPlay muted playsInline className="camera-video" />
-      <button type="button" className="camera-button" onClick={handleCapture}>Capture</button>
+      <button type="button" className="camera-button" onClick={handleCapture}>
+        Capture
+      </button>
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );

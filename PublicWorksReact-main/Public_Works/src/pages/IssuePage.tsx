@@ -21,6 +21,9 @@ const IssuePage: React.FC = () => {
     images: [null, null, null],
   });
   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>([null, null, null]);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Track camera stream
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
@@ -85,40 +88,78 @@ const IssuePage: React.FC = () => {
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (file && !file.type.startsWith("image/")) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
       setError("Only image files are allowed");
       return;
     }
+
+    setError(null);
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
-      newImgs[index] = file;
+      const emptyIndex = newImgs.findIndex((img) => img === null);
+      if (emptyIndex === -1) {
+        setError("Maximum 3 images allowed");
+        return prev;
+      }
+      newImgs[emptyIndex] = file;
       return { ...prev, images: newImgs };
     });
+
     setImagePreviews((prev) => {
-      if (prev[index]) URL.revokeObjectURL(prev[index]!);
       const newPrev = [...prev];
-      newPrev[index] = file ? URL.createObjectURL(file) : null;
+      const emptyIndex = newPrev.findIndex((img) => img === null);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(file);
       return newPrev;
     });
-    setError(null);
   };
 
   const handleCameraCapture = (blob: Blob) => {
     const file = new File([blob], `capture_${Date.now()}.jpg`, { type: blob.type });
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
-      const firstEmptyIndex = newImgs.findIndex((img) => img === null);
-      if (firstEmptyIndex !== -1) newImgs[firstEmptyIndex] = file;
+      const emptyIndex = newImgs.findIndex((img) => img === null);
+      if (emptyIndex === -1) {
+        setError("Maximum 3 images allowed");
+        return prev;
+      }
+      newImgs[emptyIndex] = file;
       return { ...prev, images: newImgs };
     });
+
     setImagePreviews((prev) => {
       const newPrev = [...prev];
-      const firstEmptyIndex = newPrev.findIndex((p) => p === null);
-      if (firstEmptyIndex !== -1) newPrev[firstEmptyIndex] = URL.createObjectURL(file);
+      const emptyIndex = newPrev.findIndex((img) => img === null);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(file);
       return newPrev;
     });
+
+    // Stop camera after capture
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const handleCameraOpen = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(stream);
+      setShowCamera(true);
+    } catch {
+      setError("Unable to access camera");
+    }
+  };
+
+  const handleCancelCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
   };
 
   const validate = (): boolean => {
@@ -169,11 +210,9 @@ const IssuePage: React.FC = () => {
       const result = await createIssue(payload);
       const newId = result?.id ?? result?.issueId ?? 0;
 
-       const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
-
-    // Map categoryId to name from categories list
-    const catName = categories.find((c) => c.categoryId === Number(catIdFromResponse))?.name ?? "Unknown";
-      
+      const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
+      const catName =
+        categories.find((c) => c.categoryId === Number(catIdFromResponse))?.name ?? "Unknown";
 
       setCreatedIssueId(newId);
       setCreatedCategoryName(catName);
@@ -203,10 +242,8 @@ const IssuePage: React.FC = () => {
     setError(null);
   };
 
-  // ✅ derive category name dynamically for preview
-  const previewCategoryName = categories.find(
-    (c) => c.categoryId === Number(formData.CategoryId)
-  )?.name ?? "Unknown";
+  const previewCategoryName =
+    categories.find((c) => c.categoryId === Number(formData.CategoryId))?.name ?? "Unknown";
 
   return (
     <div className="issue-page-container">
@@ -232,8 +269,6 @@ const IssuePage: React.FC = () => {
             }}
             placeholder="Enter 10-digit Indian phone number"
             className="input"
-            pattern="[6-9][0-9]{9}"
-            title="Enter valid Indian phone number (10 digits, starting with 6-9)"
           />
         </label>
 
@@ -279,9 +314,6 @@ const IssuePage: React.FC = () => {
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
-              style={{
-                backgroundColor: locationMode === "automatic" ? "#f5f5f5" : "#fff",
-              }}
             />
           </label>
           <label className="label">
@@ -293,51 +325,63 @@ const IssuePage: React.FC = () => {
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
-              style={{
-                backgroundColor: locationMode === "automatic" ? "#f5f5f5" : "#fff",
-              }}
             />
           </label>
         </div>
 
-        {/* Camera */}
-        <CameraCapture onCapture={handleCameraCapture} />
+        {/* Images Section */}
+        <div className="images-section">
+          <h3>Attach Images (Max 3)</h3>
+          <div className="button-group">
+            <button type="button" style={{ marginRight: "400px",marginTop:"90px" }} className="camera-button" onClick={handleCameraOpen}>
+              📷 Open Camera
+            </button>
+            <label className="file-button">
+              📁 Select from File
+              <input type="file" accept="image/*" onChange={handleFileUpload} hidden />
+            </label>
+          </div>
 
-        {/* Images */}
-        <div className="images-container">
-          {imagePreviews.map((preview, idx) => (
-            <div key={idx} className="image-slot">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt={`preview-${idx}`}
-                  className="image-preview"
-                  onClick={() => {
-                    setFormData((prev: any) => {
-                      const newImgs = [...prev.images];
-                      newImgs[idx] = null;
-                      return { ...prev, images: newImgs };
-                    });
-                    setImagePreviews((prev) => {
-                      const newPrev = [...prev];
-                      newPrev[idx] = null;
-                      return newPrev;
-                    });
-                  }}
-                  title="Click to remove image"
-                />
-              ) : (
-                <div className="image-empty">Empty Slot</div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageChange(idx, e)}
-                className="file-input"
-              />
-            </div>
-          ))}
+          {/* Preview Slots */}
+          <div className="images-container">
+            {imagePreviews.map((preview, idx) => (
+              <div key={idx} className="image-slot">
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt={`preview-${idx}`}
+                    className="image-preview"
+                    onClick={() => {
+                      setFormData((prev: any) => {
+                        const newImgs = [...prev.images];
+                        newImgs[idx] = null;
+                        return { ...prev, images: newImgs };
+                      });
+                      setImagePreviews((prev) => {
+                        const newPrev = [...prev];
+                        newPrev[idx] = null;
+                        return newPrev;
+                      });
+                    }}
+                    title="Click to remove image"
+                  />
+                ) : (
+                  <div className="image-empty">Empty Slot</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Show Camera */}
+        {showCamera && cameraStream && (
+          <div className="camera-capture-container">
+            <CameraCapture stream={cameraStream} onCapture={handleCameraCapture} />
+            <button type="button" className="cancel-camera" onClick={handleCancelCamera}>
+              Cancel Camera
+            </button>
+          </div>
+        )}
 
         {/* Description */}
         <label className="label">
@@ -358,7 +402,6 @@ const IssuePage: React.FC = () => {
         </button>
       </form>
 
-      {/* Preview Modal */}
       <PreviewModal
         isOpen={previewOpen}
         formData={formData}
@@ -368,7 +411,6 @@ const IssuePage: React.FC = () => {
         onConfirm={handleSubmit}
       />
 
-      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={modalOpen}
         issueId={createdIssueId}
