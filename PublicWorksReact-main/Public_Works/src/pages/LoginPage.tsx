@@ -24,7 +24,6 @@ const LoginPage = () => {
     axios
       .get("http://localhost:5142/auth/callback", { params: { code } })
       .then((res) => {
-        debugger;
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
@@ -55,9 +54,7 @@ const LoginPage = () => {
         username,
         password,
       });
-debugger
       if (res.status === 200) {
-        debugger
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
         window.location.href = "/admin";

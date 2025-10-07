@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createIssue, getCategories } from "../services/issueService";
 import type { Category, IssueCreateRequest } from "../types/issue";
-import { getAuthToken } from "../utils/auth";
+import { getAuthRole, getAuthToken } from "../utils/auth";
 
 // CameraCapture component: live camera + capture photo
 const CameraCapture: React.FC<{
@@ -139,6 +139,7 @@ const ConfirmationModal: React.FC<{
         </button>
       </div>
     </div>
+
   );
 };
 
@@ -181,7 +182,6 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
 
 const IssuePage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  debugger
   const [formData, setFormData] = useState<
     IssueCreateRequest & {
       phoneNumber?: string;
@@ -223,6 +223,12 @@ const IssuePage: React.FC = () => {
 
   // Fetch categories on mount
   useEffect(() => {
+    const role = getAuthRole();
+    console.log("roleeee:", role);
+    if(token == "" || role != "2"){
+      setError("NOT AUTHORIZED");
+      return; 
+    }
     async function fetchCategories() {
       try {
         const cats = await getCategories(token);
@@ -394,7 +400,7 @@ const IssuePage: React.FC = () => {
       const imagesToUpload = formData.images.filter((img): img is File => img !== null);
       const payload = { ...formData, images: imagesToUpload };
 
-      const result = await createIssue(payload);
+  const result = await createIssue(payload, token || "");
       const newId = result?.id ?? result?.issueId ?? 0;
       const catName = categories.find((c) => c.categoryId === formData.CategoryId)?.name ?? "Unknown";
 
@@ -428,6 +434,31 @@ const IssuePage: React.FC = () => {
     setImagePreviews([null, null, null]);
     setError(null);
   };
+
+  if (error === "NOT AUTHORIZED") {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)"
+      }}>
+        <div style={{
+          background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
+          border: "2px solid #ef4444",
+          color: "#991b1b",
+          padding: "32px 40px",
+          borderRadius: "16px",
+          boxShadow: "0 4px 12px rgba(239, 68, 68, 0.12)",
+          fontSize: "22px",
+          fontWeight: 700
+        }}>
+          NOT AUTHORIZED
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -494,6 +525,7 @@ const IssuePage: React.FC = () => {
             ))}
           </select>
         </label>
+       
 
         {/* Description */}
         <label style={labelStyle}>
