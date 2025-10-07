@@ -122,3 +122,20 @@
 .submit-button:hover {
   background-color: #218838;
 }
+
+
+.image-with-geo {
+  position: relative;
+  display: inline-block;
+}
+
+.geo-overlay {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 3px;
+}

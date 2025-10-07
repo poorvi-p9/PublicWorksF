@@ -20,20 +20,20 @@ const IssuePage: React.FC = () => {
     longitude: "",
     images: [null, null, null],
   });
+
   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>([null, null, null]);
   const [showCamera, setShowCamera] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Track camera stream
-
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [locationMode, setLocationMode] = useState<"manual" | "automatic">("manual");
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [createdIssueId, setCreatedIssueId] = useState(0);
   const [createdCategoryName, setCreatedCategoryName] = useState("");
   const [createdDescription, setCreatedDescription] = useState("");
+  const [automaticCoords, setAutomaticCoords] = useState({ latitude: "", longitude: "" });
 
   const token = getAuthToken();
 
@@ -60,43 +60,89 @@ const IssuePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (locationMode === "automatic") {
-      if (!navigator.geolocation) {
-        setError("Geolocation is not supported by your browser.");
-        return;
-      }
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          setFormData((prev: any) => ({
-            ...prev,
-            latitude: latitude.toFixed(7),
-            longitude: longitude.toFixed(7),
-          }));
-          setError(null);
+          const lat = latitude.toFixed(7);
+          const lng = longitude.toFixed(7);
+          setAutomaticCoords({ latitude: lat, longitude: lng });
         },
         () => {
-          setError("Failed to get your location. Please allow location access.");
-          setLocationMode("manual");
+          console.warn("Failed to get automatic location");
         }
       );
     }
-  }, [locationMode]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
+
+    if (name === "phoneNumber") {
+    // Remove non-digit characters
+    let numeric = value.replace(/\D/g, "");
+
+    // Limit to 10 digits
+    if (numeric.length > 10) numeric = numeric.slice(0, 10);
+
+    // If first digit exists, enforce 6-9
+    if (numeric.length > 0 && !/^[6-9]/.test(numeric[0])) {
+      numeric = ""; // reset if first digit is invalid
+    }
+
+    setFormData((prev: any) => ({ ...prev, [name]: numeric }));
+    return;
+  }
+
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const drawLatLongOnImage = async (file: File, lat: string, lng: string): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        ctx.font = `${Math.floor(canvas.width * 0.03)}px Arial`;
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 3;
+        const text = `Lat: ${lat}, Lng: ${lng}`;
+        const x = 20;
+        const y = canvas.height - 30;
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const newFile = new File([blob], file.name, { type: "image/jpeg" });
+          resolve(newFile);
+        }, "image/jpeg");
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Only image files are allowed");
       return;
     }
-
     setError(null);
+
+    const { latitude: lat, longitude: lng } = automaticCoords;
+    const stampedFile = await drawLatLongOnImage(file, lat, lng);
+
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
       const emptyIndex = newImgs.findIndex((img) => img === null);
@@ -104,20 +150,23 @@ const IssuePage: React.FC = () => {
         setError("Maximum 3 images allowed");
         return prev;
       }
-      newImgs[emptyIndex] = file;
+      newImgs[emptyIndex] = stampedFile;
       return { ...prev, images: newImgs };
     });
 
     setImagePreviews((prev) => {
       const newPrev = [...prev];
       const emptyIndex = newPrev.findIndex((img) => img === null);
-      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(file);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(stampedFile);
       return newPrev;
     });
   };
 
-  const handleCameraCapture = (blob: Blob) => {
+  const handleCameraCapture = async (blob: Blob) => {
     const file = new File([blob], `capture_${Date.now()}.jpg`, { type: blob.type });
+    const { latitude: lat, longitude: lng } = automaticCoords;
+    const stampedFile = await drawLatLongOnImage(file, lat, lng);
+
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
       const emptyIndex = newImgs.findIndex((img) => img === null);
@@ -125,18 +174,17 @@ const IssuePage: React.FC = () => {
         setError("Maximum 3 images allowed");
         return prev;
       }
-      newImgs[emptyIndex] = file;
+      newImgs[emptyIndex] = stampedFile;
       return { ...prev, images: newImgs };
     });
 
     setImagePreviews((prev) => {
       const newPrev = [...prev];
       const emptyIndex = newPrev.findIndex((img) => img === null);
-      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(file);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(stampedFile);
       return newPrev;
     });
 
-    // Stop camera after capture
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
@@ -167,30 +215,21 @@ const IssuePage: React.FC = () => {
       setError("Description is required");
       return false;
     }
-
-    const wordCount = formData.description.trim().split(/\s+/).length;
-    if (wordCount > 250) {
-      setError("Description must not exceed 250 words");
-      return false;
-    }
     if (formData.CategoryId <= 0) {
       setError("Please select a category");
       return false;
     }
-    if (!formData.latitude || isNaN(Number(formData.latitude))) {
-      setError("Invalid latitude");
-      return false;
-    }
-    if (!formData.longitude || isNaN(Number(formData.longitude))) {
-      setError("Invalid longitude");
+    if (!automaticCoords.latitude || !automaticCoords.longitude) {
+      setError("Unable to fetch automatic location. Please allow location access.");
       return false;
     }
 
     const indianPhoneRegex = /^[6-9]\d{9}$/;
     if (!indianPhoneRegex.test(formData.phoneNumber)) {
-      setError("Phone number must be a valid 10-digit Indian number starting with 6-9");
+      setError("Phone number must be a valid 10-digit Indian number");
       return false;
     }
+
     setError(null);
     return true;
   };
@@ -206,10 +245,15 @@ const IssuePage: React.FC = () => {
     setLoading(true);
     try {
       const imagesToUpload = formData.images.filter((img: any) => img !== null);
-      const payload = { ...formData, images: imagesToUpload };
-      const result = await createIssue(payload);
-      const newId = result?.id ?? result?.issueId ?? 0;
+      const payload = {
+        ...formData,
+        latitude: automaticCoords.latitude,
+        longitude: automaticCoords.longitude,
+        images: imagesToUpload,
+      };
 
+      const result = await createIssue(payload, token);
+      const newId = result?.id ?? result?.issueId ?? 0;
       const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
       const catName =
         categories.find((c) => c.categoryId === Number(catIdFromResponse))?.name ?? "Unknown";
@@ -218,7 +262,8 @@ const IssuePage: React.FC = () => {
       setCreatedCategoryName(catName);
       setCreatedDescription(formData.description);
       setModalOpen(true);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Failed to create issue. Please try again.");
     } finally {
       setLoading(false);
@@ -249,26 +294,19 @@ const IssuePage: React.FC = () => {
     <div className="issue-page-container">
       <h1>Create Issue</h1>
       <form onSubmit={handlePreview} className="issue-form">
-        {/* Phone */}
+        {/* ✅ Phone Number */}
         <label className="label">
           <span className="label-text">Phone Number:</span>
           <input
             type="tel"
             name="phoneNumber"
             value={formData.phoneNumber}
-            onChange={(e) => {
-              let val = e.target.value.replace(/\D/g, "");
-              if (val.length > 10) val = val.slice(0, 10);
-              if (val.length > 0 && !/^[6-9]/.test(val[0])) {
-                setError("Indian phone number must start with 6, 7, 8, or 9");
-                val = "";
-              } else {
-                setError(null);
-              }
-              setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
-            }}
+            onChange={handleChange}
             placeholder="Enter 10-digit Indian phone number"
             className="input"
+            pattern="^[6-9]\d{9}$"
+            maxLength={10}
+            required
           />
         </label>
 
@@ -290,7 +328,7 @@ const IssuePage: React.FC = () => {
           </select>
         </label>
 
-        {/* Location Mode */}
+        {/* Location Input Mode */}
         <label className="label">
           <span className="label-text">Location Input Mode:</span>
           <select
@@ -303,14 +341,14 @@ const IssuePage: React.FC = () => {
           </select>
         </label>
 
-        {/* Lat/Lng */}
+        {/* Latitude & Longitude */}
         <div className="lat-lng-container">
           <label className="label">
             <span className="label-text">Latitude:</span>
             <input
               type="text"
               name="latitude"
-              value={formData.latitude}
+              value={locationMode === "manual" ? formData.latitude : automaticCoords.latitude}
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
@@ -321,7 +359,7 @@ const IssuePage: React.FC = () => {
             <input
               type="text"
               name="longitude"
-              value={formData.longitude}
+              value={locationMode === "manual" ? formData.longitude : automaticCoords.longitude}
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
@@ -329,11 +367,11 @@ const IssuePage: React.FC = () => {
           </label>
         </div>
 
-        {/* Images Section */}
+        {/* Images */}
         <div className="images-section">
           <h3>Attach Images (Max 3)</h3>
           <div className="button-group">
-            <button type="button" style={{ marginRight: "400px",marginTop:"90px" }} className="camera-button" onClick={handleCameraOpen}>
+            <button type="button" style={{ marginRight: "400px",marginTop:"90px" }}className="camera-button" onClick={handleCameraOpen}>
               📷 Open Camera
             </button>
             <label className="file-button">
@@ -342,29 +380,11 @@ const IssuePage: React.FC = () => {
             </label>
           </div>
 
-          {/* Preview Slots */}
           <div className="images-container">
             {imagePreviews.map((preview, idx) => (
               <div key={idx} className="image-slot">
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt={`preview-${idx}`}
-                    className="image-preview"
-                    onClick={() => {
-                      setFormData((prev: any) => {
-                        const newImgs = [...prev.images];
-                        newImgs[idx] = null;
-                        return { ...prev, images: newImgs };
-                      });
-                      setImagePreviews((prev) => {
-                        const newPrev = [...prev];
-                        newPrev[idx] = null;
-                        return newPrev;
-                      });
-                    }}
-                    title="Click to remove image"
-                  />
+                  <img src={preview} alt={`preview-${idx}`} className="image-preview" />
                 ) : (
                   <div className="image-empty">Empty Slot</div>
                 )}
@@ -373,7 +393,7 @@ const IssuePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Show Camera */}
+        {/* Camera Capture */}
         {showCamera && cameraStream && (
           <div className="camera-capture-container">
             <CameraCapture stream={cameraStream} onCapture={handleCameraCapture} />
@@ -402,15 +422,18 @@ const IssuePage: React.FC = () => {
         </button>
       </form>
 
+      {/* Preview Modal */}
       <PreviewModal
         isOpen={previewOpen}
         formData={formData}
         imagePreviews={imagePreviews}
         categoryName={previewCategoryName}
+        imageCoords={automaticCoords}
         onCancel={() => setPreviewOpen(false)}
         onConfirm={handleSubmit}
       />
 
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={modalOpen}
         issueId={createdIssueId}
