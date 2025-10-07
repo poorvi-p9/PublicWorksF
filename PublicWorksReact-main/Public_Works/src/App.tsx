@@ -16,7 +16,6 @@ function App() {
 
         {/* Protected Routes (nested under layout) */}
         <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/messages" element={<Messages />} />
           <Route path="/create-issue" element={<IssuePage />} />

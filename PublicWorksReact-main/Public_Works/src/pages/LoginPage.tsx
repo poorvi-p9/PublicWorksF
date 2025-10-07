@@ -13,12 +13,22 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // ✅ If already logged in, redirect
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.role === "Admin") window.location.href = "/admin";
+      else window.location.href = "/create-issue";
+    }
+  }, []);
+
+  // ✅ Handle Google redirect back
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
     if (!code) return;
-    // window.history.replaceState({}, document.title, window.location.pathname);
 
     // Send code to backend
     axios
@@ -27,10 +37,9 @@ const LoginPage = () => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         localStorage.setItem("userId", user.userId); // <-- add this
-localStorage.setItem("user", JSON.stringify(user));
-        //localStorage.setItem("user", JSON.stringify(user));
-        console.log("Backend response:", res.data);
+        localStorage.setItem("user", JSON.stringify(user));
 
+        window.history.replaceState({}, "", "/create-issue");
         // Redirect to dashboard after storing token
         window.location.href = "/create-issue";
       })
