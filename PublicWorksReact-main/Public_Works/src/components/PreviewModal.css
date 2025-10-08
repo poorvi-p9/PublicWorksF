@@ -56,3 +56,32 @@
   justify-content: space-between;
   margin-top: 20px;
 }
+.modal-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.image-with-geo {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.geo-overlay {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 7px;
+  border-radius: 3px;
+}

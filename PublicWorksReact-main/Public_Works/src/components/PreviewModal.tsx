@@ -6,6 +6,7 @@ interface PreviewModalProps {
   formData: any;
   imagePreviews: (string | null)[];
   categoryName: string;
+  imageCoords: { latitude: string; longitude: string }; // new prop
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -15,6 +16,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
   formData,
   imagePreviews,
   categoryName,
+  imageCoords,
   onCancel,
   onConfirm,
 }) => {
@@ -24,15 +26,32 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
     <div className="modal-overlay">
       <div className="modal-box">
         <h2>Preview Issue Details</h2>
-        <p><strong>Phone Number:</strong> {formData.phoneNumber}</p>
-        <p><strong>Category:</strong> {categoryName}</p>
-        <p><strong>Latitude:</strong> {formData.latitude}</p>
-        <p><strong>Longitude:</strong> {formData.longitude}</p>
-        <p><strong>Description:</strong> {formData.description}</p>
+        <p>
+          <strong>Phone Number:</strong> {formData.phoneNumber}
+        </p>
+        <p>
+          <strong>Category:</strong> {categoryName}
+        </p>
+        <p>
+          <strong>Latitude (Image):</strong> {imageCoords.latitude}
+        </p>
+        <p>
+          <strong>Longitude (Image):</strong> {imageCoords.longitude}
+        </p>
+        <p>
+          <strong>Description:</strong> {formData.description}
+        </p>
 
         <div className="modal-images">
           {imagePreviews.map((img, idx) =>
-            img ? <img key={idx} src={img} alt={`preview-${idx}`} /> : null
+            img ? (
+              <div key={idx} className="image-with-geo">
+                <img src={img} alt={`preview-${idx}`} className="preview-image" />
+                <div className="geo-overlay">
+                  Lat: {imageCoords.latitude}, Lng: {imageCoords.longitude}
+                </div>
+              </div>
+            ) : null
           )}
         </div>
 

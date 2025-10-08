@@ -1,195 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { createIssue, getCategories } from "../services/issueService";
-import type { Category, IssueCreateRequest } from "../types/issue";
-import { getAuthRole, getAuthToken } from "../utils/auth";
-
-// CameraCapture component: live camera + capture photo
-const CameraCapture: React.FC<{
-  onCapture: (blob: Blob) => void;
-}> = ({ onCapture }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function startCamera() {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-        setStream(mediaStream);
-      } catch {
-        setError("Camera access denied or not available.");
-      }
-    }
-    startCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob((blob) => {
-      if (blob) {
-        onCapture(blob);
-      }
-    }, "image/jpeg");
-  };
-
-  if (error)
-    return (
-      <div style={{ color: "#ff4d4f", fontWeight: "bold", marginBottom: 10 }}>
-        {error}
-      </div>
-    );
-
-  return (
-    <div
-      style={{
-        marginBottom: 10,
-        borderRadius: 8,
-        overflow: "hidden",
-        boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
-        backgroundColor: "#000",
-        position: "relative",
-        height: 200,
-      }}
-    >
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-      <button
-        type="button"
-        onClick={handleCapture}
-        style={{
-          position: "absolute",
-          bottom: 10,
-          right: 10,
-          padding: "8px 16px",
-          backgroundColor: "#1890ff",
-          color: "#fff",
-          border: "none",
-          borderRadius: 20,
-          fontWeight: "600",
-          cursor: "pointer",
-          boxShadow: "0 2px 6px rgba(24, 144, 255, 0.6)",
-          userSelect: "none",
-          transition: "background-color 0.3s ease",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#40a9ff")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = "#1890ff")
-        }
-      >
-        Capture
-      </button>
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-    </div>
-  );
-};
-
-// Confirmation modal to show after successful creation
-const ConfirmationModal: React.FC<{
-  isOpen: boolean;
-  issueId: number;
-  categoryName: string;
-  description: string;
-  onClose: () => void;
-}> = ({ isOpen, issueId, categoryName, description, onClose }) => {
-  if (!isOpen) return null;
-  return (
-    <div style={modalStyles.overlay}>
-      <div style={modalStyles.modal}>
-        <h2 style={{ color: "#52c41a", marginBottom: 15 }}>
-          ✅ Issue Created Successfully!
-        </h2>
-        <p>
-          <strong>Issue ID:</strong> {issueId}
-        </p>
-        <p>
-          <strong>Category:</strong> {categoryName}
-        </p>
-        <p>
-          <strong>Description:</strong> {description}
-        </p>
-        <button onClick={onClose} style={modalStyles.button}>
-          Close
-        </button>
-      </div>
-    </div>
-
-  );
-};
-
-const modalStyles: { [key: string]: React.CSSProperties } = {
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10000,
-  },
-  modal: {
-    backgroundColor: "#fff",
-    padding: 30,
-    borderRadius: 15,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-    width: "90%",
-    maxWidth: 420,
-    textAlign: "center",
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-  },
-  button: {
-    marginTop: 25,
-    padding: "12px 26px",
-    fontSize: 17,
-    backgroundColor: "#1890ff",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: "600",
-    transition: "background-color 0.3s ease",
-  },
-};
+import React, { useState, useEffect } from "react";
+import CameraCapture from "../components/CameraCapture";
+import PreviewModal from "../components/PreviewModal";
+import ConfirmationModal from "../components/ConfirmationModal";
+import { getCategories, createIssue } from "../services/issueService";
+import { getAuthToken } from "../utils/auth";
+import type { Category } from "../types/issue";
+import "./IssuePage.css";
 
 const IssuePage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [formData, setFormData] = useState<
-    IssueCreateRequest & {
-      phoneNumber?: string;
-      latitude?: string;
-      longitude?: string;
-      images: (File | null)[];
-    }
-  >({
+  const [formData, setFormData] = useState<any>({
     CategoryId: 0,
     priorityId: 0,
     statusId: 0,
@@ -200,27 +20,24 @@ const IssuePage: React.FC = () => {
     longitude: "",
     images: [null, null, null],
   });
+
   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>([null, null, null]);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [locationMode, setLocationMode] = useState<"manual" | "automatic">("manual");
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [createdIssueId, setCreatedIssueId] = useState(0);
   const [createdCategoryName, setCreatedCategoryName] = useState("");
   const [createdDescription, setCreatedDescription] = useState("");
+  const [automaticCoords, setAutomaticCoords] = useState({ latitude: "", longitude: "" });
 
   const token = getAuthToken();
 
   useEffect(() => {
-    const role = getAuthRole();
-    console.log("roleeee:", role);
-    if(token == "" || role != "2"){
-      setError("NOT AUTHORIZED");
-      return; 
-    }
     async function fetchCategories() {
       try {
         const cats = await getCategories(token);
@@ -243,68 +60,154 @@ const IssuePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (locationMode === "automatic") {
-      if (!navigator.geolocation) {
-        setError("Geolocation is not supported by your browser.");
-        return;
-      }
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          setFormData((prev: any) => ({
-            ...prev,
-            latitude: latitude.toFixed(7),
-            longitude: longitude.toFixed(7),
-          }));
-          setError(null);
+          const lat = latitude.toFixed(7);
+          const lng = longitude.toFixed(7);
+          setAutomaticCoords({ latitude: lat, longitude: lng });
         },
         () => {
-          setError("Failed to get your location. Please allow location access.");
-          setLocationMode("manual");
+          console.warn("Failed to get automatic location");
         }
       );
     }
-  }, [locationMode]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
+
+    if (name === "phoneNumber") {
+    // Remove non-digit characters
+    let numeric = value.replace(/\D/g, "");
+
+    // Limit to 10 digits
+    if (numeric.length > 10) numeric = numeric.slice(0, 10);
+
+    // If first digit exists, enforce 6-9
+    if (numeric.length > 0 && !/^[6-9]/.test(numeric[0])) {
+      numeric = ""; // reset if first digit is invalid
+    }
+
+    setFormData((prev: any) => ({ ...prev, [name]: numeric }));
+    return;
+  }
+
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const drawLatLongOnImage = async (file: File, lat: string, lng: string): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        ctx.font = `${Math.floor(canvas.width * 0.03)}px Arial`;
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 3;
+        const text = `Lat: ${lat}, Lng: ${lng}`;
+        const x = 20;
+        const y = canvas.height - 30;
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const newFile = new File([blob], file.name, { type: "image/jpeg" });
+          resolve(newFile);
+        }, "image/jpeg");
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (file && !file.type.startsWith("image/")) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
       setError("Only image files are allowed");
       return;
     }
+    setError(null);
+
+    const { latitude: lat, longitude: lng } = automaticCoords;
+    const stampedFile = await drawLatLongOnImage(file, lat, lng);
+
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
-      newImgs[index] = file;
+      const emptyIndex = newImgs.findIndex((img) => img === null);
+      if (emptyIndex === -1) {
+        setError("Maximum 3 images allowed");
+        return prev;
+      }
+      newImgs[emptyIndex] = stampedFile;
       return { ...prev, images: newImgs };
     });
+
     setImagePreviews((prev) => {
-      if (prev[index]) URL.revokeObjectURL(prev[index]!);
       const newPrev = [...prev];
-      newPrev[index] = file ? URL.createObjectURL(file) : null;
+      const emptyIndex = newPrev.findIndex((img) => img === null);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(stampedFile);
       return newPrev;
     });
-    setError(null);
   };
 
-  const handleCameraCapture = (blob: Blob) => {
+  const handleCameraCapture = async (blob: Blob) => {
     const file = new File([blob], `capture_${Date.now()}.jpg`, { type: blob.type });
+    const { latitude: lat, longitude: lng } = automaticCoords;
+    const stampedFile = await drawLatLongOnImage(file, lat, lng);
+
     setFormData((prev: any) => {
       const newImgs = [...prev.images];
-      const firstEmptyIndex = newImgs.findIndex((img) => img === null);
-      if (firstEmptyIndex !== -1) newImgs[firstEmptyIndex] = file;
+      const emptyIndex = newImgs.findIndex((img) => img === null);
+      if (emptyIndex === -1) {
+        setError("Maximum 3 images allowed");
+        return prev;
+      }
+      newImgs[emptyIndex] = stampedFile;
       return { ...prev, images: newImgs };
     });
+
     setImagePreviews((prev) => {
       const newPrev = [...prev];
-      const firstEmptyIndex = newPrev.findIndex((p) => p === null);
-      if (firstEmptyIndex !== -1) newPrev[firstEmptyIndex] = URL.createObjectURL(file);
+      const emptyIndex = newPrev.findIndex((img) => img === null);
+      if (emptyIndex !== -1) newPrev[emptyIndex] = URL.createObjectURL(stampedFile);
       return newPrev;
     });
+
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const handleCameraOpen = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(stream);
+      setShowCamera(true);
+    } catch {
+      setError("Unable to access camera");
+    }
+  };
+
+  const handleCancelCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
   };
 
   const validate = (): boolean => {
@@ -312,30 +215,21 @@ const IssuePage: React.FC = () => {
       setError("Description is required");
       return false;
     }
-
-    const wordCount = formData.description.trim().split(/\s+/).length;
-    if (wordCount > 250) {
-      setError("Description must not exceed 250 words");
-      return false;
-    }
     if (formData.CategoryId <= 0) {
       setError("Please select a category");
       return false;
     }
-    if (!formData.latitude || isNaN(Number(formData.latitude))) {
-      setError("Invalid latitude");
-      return false;
-    }
-    if (!formData.longitude || isNaN(Number(formData.longitude))) {
-      setError("Invalid longitude");
+    if (!automaticCoords.latitude || !automaticCoords.longitude) {
+      setError("Unable to fetch automatic location. Please allow location access.");
       return false;
     }
 
     const indianPhoneRegex = /^[6-9]\d{9}$/;
     if (!indianPhoneRegex.test(formData.phoneNumber)) {
-      setError("Phone number must be a valid 10-digit Indian number starting with 6-9");
+      setError("Phone number must be a valid 10-digit Indian number");
       return false;
     }
+
     setError(null);
     return true;
   };
@@ -351,22 +245,25 @@ const IssuePage: React.FC = () => {
     setLoading(true);
     try {
       const imagesToUpload = formData.images.filter((img: any) => img !== null);
-      const payload = { ...formData, images: imagesToUpload };
+      const payload = {
+        ...formData,
+        latitude: automaticCoords.latitude,
+        longitude: automaticCoords.longitude,
+        images: imagesToUpload,
+      };
 
-      const result = await createIssue(payload, token || "");
+      const result = await createIssue(payload, token);
       const newId = result?.id ?? result?.issueId ?? 0;
-
-       const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
-
-    // Map categoryId to name from categories list
-    const catName = categories.find((c) => c.categoryId === Number(catIdFromResponse))?.name ?? "Unknown";
-      
+      const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
+      const catName =
+        categories.find((c) => c.categoryId === Number(catIdFromResponse))?.name ?? "Unknown";
 
       setCreatedIssueId(newId);
       setCreatedCategoryName(catName);
       setCreatedDescription(formData.description);
       setModalOpen(true);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Failed to create issue. Please try again.");
     } finally {
       setLoading(false);
@@ -390,79 +287,29 @@ const IssuePage: React.FC = () => {
     setError(null);
   };
 
-  if (error === "NOT AUTHORIZED") {
-    return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)"
-      }}>
-        <div style={{
-          background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
-          border: "2px solid #ef4444",
-          color: "#991b1b",
-          padding: "32px 40px",
-          borderRadius: "16px",
-          boxShadow: "0 4px 12px rgba(239, 68, 68, 0.12)",
-          fontSize: "22px",
-          fontWeight: 700
-        }}>
-          NOT AUTHORIZED
-        </div>
-      </div>
-    );
-  }
+  const previewCategoryName =
+    categories.find((c) => c.categoryId === Number(formData.CategoryId))?.name ?? "Unknown";
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "40px auto",
-        padding: 30,
-        backgroundColor: "#f9faff",
-        borderRadius: 15,
-        boxShadow: "0 6px 20px rgba(0, 0, 0, 0.1)",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
-    >
-      <h1
-        style={{
-          marginBottom: 20,
-          color: "#222",
-          textAlign: "center",
-          fontWeight: "700",
-          letterSpacing: "1.5px",
-        }}
-      >
-        Create Issue
-      </h1>
-      {/* <p
-        style={{
-          fontSize: 14,
-          fontWeight: "500",
-          marginBottom: 30,
-          color: "#555",
-          textAlign: "center",
-        }}
-      >
-        Logged in as:{" "}
-        <span style={{ fontWeight: "700", color: "#1890ff" }}>
-          {userEmail || "Unknown"}
-        </span>
-      </p> */}
+    <div className="issue-page-container">
+      <h1>Create Issue</h1>
+      <form onSubmit={handlePreview} className="issue-form">
+        {/* ✅ Phone Number */}
+        <label className="label">
+          <span className="label-text">Phone Number:</span>
+          <input
+            type="tel"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            placeholder="Enter 10-digit Indian phone number"
+            className="input"
+            pattern="^[6-9]\d{9}$"
+            maxLength={10}
+            required
+          />
+        </label>
 
-        <form
-        onSubmit={handleSubmit}
-        noValidate
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 18,
-        }}
-      >
-        
         {/* Category */}
         <label className="label">
           <span className="label-text">Category:</span>
@@ -480,9 +327,8 @@ const IssuePage: React.FC = () => {
             ))}
           </select>
         </label>
-       
 
-        {/* Location Mode */}
+        {/* Location Input Mode */}
         <label className="label">
           <span className="label-text">Location Input Mode:</span>
           <select
@@ -495,20 +341,17 @@ const IssuePage: React.FC = () => {
           </select>
         </label>
 
-        {/* Lat/Lng */}
+        {/* Latitude & Longitude */}
         <div className="lat-lng-container">
           <label className="label">
             <span className="label-text">Latitude:</span>
             <input
               type="text"
               name="latitude"
-              value={formData.latitude}
+              value={locationMode === "manual" ? formData.latitude : automaticCoords.latitude}
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
-              style={{
-                backgroundColor: locationMode === "automatic" ? "#f5f5f5" : "#fff",
-              }}
             />
           </label>
           <label className="label">
@@ -516,55 +359,49 @@ const IssuePage: React.FC = () => {
             <input
               type="text"
               name="longitude"
-              value={formData.longitude}
+              value={locationMode === "manual" ? formData.longitude : automaticCoords.longitude}
               onChange={handleChange}
               className="input"
               readOnly={locationMode === "automatic"}
-              style={{
-                backgroundColor: locationMode === "automatic" ? "#f5f5f5" : "#fff",
-              }}
             />
           </label>
         </div>
 
-        {/* Camera */}
-        <CameraCapture onCapture={handleCameraCapture} />
-
         {/* Images */}
-        <div className="images-container">
-          {imagePreviews.map((preview, idx) => (
-            <div key={idx} className="image-slot">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt={`preview-${idx}`}
-                  className="image-preview"
-                  onClick={() => {
-                    setFormData((prev: any) => {
-                      const newImgs = [...prev.images];
-                      newImgs[idx] = null;
-                      return { ...prev, images: newImgs };
-                    });
-                    setImagePreviews((prev) => {
-                      const newPrev = [...prev];
-                      newPrev[idx] = null;
-                      return newPrev;
-                    });
-                  }}
-                  title="Click to remove image"
-                />
-              ) : (
-                <div className="image-empty">Empty Slot</div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageChange(idx, e)}
-                className="file-input"
-              />
-            </div>
-          ))}
+        <div className="images-section">
+          <h3>Attach Images (Max 3)</h3>
+          <div className="button-group">
+            <button type="button" style={{ marginRight: "400px",marginTop:"90px" }}className="camera-button" onClick={handleCameraOpen}>
+              📷 Open Camera
+            </button>
+            <label className="file-button">
+              📁 Select from File
+              <input type="file" accept="image/*" onChange={handleFileUpload} hidden />
+            </label>
+          </div>
+
+          <div className="images-container">
+            {imagePreviews.map((preview, idx) => (
+              <div key={idx} className="image-slot">
+                {preview ? (
+                  <img src={preview} alt={`preview-${idx}`} className="image-preview" />
+                ) : (
+                  <div className="image-empty">Empty Slot</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Camera Capture */}
+        {showCamera && cameraStream && (
+          <div className="camera-capture-container">
+            <CameraCapture stream={cameraStream} onCapture={handleCameraCapture} />
+            <button type="button" className="cancel-camera" onClick={handleCancelCamera}>
+              Cancel Camera
+            </button>
+          </div>
+        )}
 
         {/* Description */}
         <label className="label">
@@ -591,6 +428,7 @@ const IssuePage: React.FC = () => {
         formData={formData}
         imagePreviews={imagePreviews}
         categoryName={previewCategoryName}
+        imageCoords={automaticCoords}
         onCancel={() => setPreviewOpen(false)}
         onConfirm={handleSubmit}
       />
