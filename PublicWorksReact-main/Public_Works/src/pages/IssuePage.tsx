@@ -453,6 +453,16 @@ const IssuePage: React.FC = () => {
         </span>
       </p> */}
 
+        <form
+        onSubmit={handleSubmit}
+        noValidate
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+        }}
+      >
+        
         {/* Category */}
         <label className="label">
           <span className="label-text">Category:</span>
