@@ -353,11 +353,7 @@ const IssuePage: React.FC = () => {
       const imagesToUpload = formData.images.filter((img: any) => img !== null);
       const payload = { ...formData, images: imagesToUpload };
 
-<<<<<<< HEAD
-      const result = await createIssue(payload, token);
-=======
-  const result = await createIssue(payload, token || "");
->>>>>>> origin/features/poorvi
+      const result = await createIssue(payload, token || "");
       const newId = result?.id ?? result?.issueId ?? 0;
 
        const catIdFromResponse = result?.categoryId ?? formData.CategoryId;
@@ -394,41 +390,6 @@ const IssuePage: React.FC = () => {
     setError(null);
   };
 
-<<<<<<< HEAD
-  // ✅ derive category name dynamically for preview
-  const previewCategoryName = categories.find(
-    (c) => c.categoryId === Number(formData.CategoryId)
-  )?.name ?? "Unknown";
-
-  return (
-    <div className="issue-page-container">
-      <h1>Create Issue</h1>
-      <form onSubmit={handlePreview} className="issue-form">
-        {/* Phone */}
-        <label className="label">
-          <span className="label-text">Phone Number:</span>
-          <input
-            type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={(e) => {
-              let val = e.target.value.replace(/\D/g, "");
-              if (val.length > 10) val = val.slice(0, 10);
-              if (val.length > 0 && !/^[6-9]/.test(val[0])) {
-                setError("Indian phone number must start with 6, 7, 8, or 9");
-                val = "";
-              } else {
-                setError(null);
-              }
-              setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
-            }}
-            placeholder="Enter 10-digit Indian phone number"
-            className="input"
-            pattern="[6-9][0-9]{9}"
-            title="Enter valid Indian phone number (10 digits, starting with 6-9)"
-          />
-        </label>
-=======
   if (error === "NOT AUTHORIZED") {
     return (
       <div style={{
@@ -491,7 +452,6 @@ const IssuePage: React.FC = () => {
           {userEmail || "Unknown"}
         </span>
       </p> */}
->>>>>>> origin/features/poorvi
 
         {/* Category */}
         <label className="label">
