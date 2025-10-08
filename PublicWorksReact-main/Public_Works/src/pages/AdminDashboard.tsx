@@ -4,6 +4,16 @@ import { getAuthRole, getAuthToken } from "../utils/auth";
 import type { Priority } from "../types/issue";
 import MessageModal from "../components/MessageModal";
 import { RemarksModal } from "../components/RemarksModal";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 
 interface Status {
@@ -21,6 +31,7 @@ const AdminDashboard: React.FC = () => {
   // State for map popup
   const [mapOpen, setMapOpen] = useState(false);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewAllMapOpen, setViewAllMapOpen] = useState(false);
 
   // State for image viewer
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
@@ -38,6 +49,14 @@ const AdminDashboard: React.FC = () => {
   const handleCloseMap = () => {
     setMapOpen(false);
     setMapCoords(null);
+  };
+
+  const handleShowAllOnMap = () => {
+  setViewAllMapOpen(true);
+  };
+
+  const handleCloseAllMap = () => {
+    setViewAllMapOpen(false);
   };
 
   // Fetch and display images for an issue
@@ -242,7 +261,8 @@ const AdminDashboard: React.FC = () => {
 
   const getStatusClass = (statusId: number) => {
     if (statusId === 3) return { background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" };
-    if (statusId === 2) return { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" };
+    if (statusId === 1) return { background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e3a8a" };
+    if (statusId === 2) return { background: "linear-gradient(135deg, #dabacfff 0%, #a53c93ff 100%)", color: "#5a033dff" };
     return { background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)", color: "#374151" };
   };
 
@@ -443,6 +463,37 @@ const AdminDashboard: React.FC = () => {
               </p>
             </div>
           </div>
+          <button
+          onClick={handleShowAllOnMap}
+          style={{
+            background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+            color: "white",
+            padding: "10px 20px",
+            border: "none",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            boxShadow: "0 4px 6px rgba(5, 150, 105, 0.3)",
+            transition: "all 0.3s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = "0 6px 12px rgba(5, 150, 105, 0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 4px 6px rgba(5, 150, 105, 0.3)";
+          }}
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          View All on Map
+        </button>
           
           {/* <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
             <button
@@ -1153,6 +1204,101 @@ const AdminDashboard: React.FC = () => {
             </table>
           </div>
         </div>
+        {/* View All Issues Map Modal */}
+{/* View All Issues Map Modal */}
+{viewAllMapOpen && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    background: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}>
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+      padding: '24px',
+      width: '85vw',
+      height: '85vh',
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <button
+        onClick={handleCloseAllMap}
+        style={{
+          position: 'absolute',
+          top: '16px',
+          right: '16px',
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          fontSize: '14px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
+          zIndex: 1001
+        }}
+      >
+        ✕ Close
+      </button>
+      <h3 style={{ margin: '0 0 16px 0', color: '#1e3a8a', fontWeight: 700, fontSize: '20px' }}>
+        All Issues Map View ({issues.filter(i => i.latitude && i.longitude).length} locations)
+      </h3>
+      <div style={{ flex: 1, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <MapContainer
+          center={[28.5, 77.5]}
+          zoom={10}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {issues
+            .filter(issue => issue.latitude && issue.longitude)
+            .map((issue) => (
+              <Marker
+                key={issue.issueId}
+                position={[issue.latitude, issue.longitude]}
+              >
+                <Popup>
+                  <div style={{ minWidth: '200px' }}>
+                    <strong style={{ color: '#1e3a8a', fontSize: '14px' }}>
+                      Issue #{issue.issueId}
+                    </strong>
+                    <div style={{ marginTop: '8px', fontSize: '13px' }}>
+                      <strong>Category:</strong>{' '}
+                      {categories.find(cat => cat.categoryId === issue.categoryId)?.name || 'Unknown'}
+                    </div>
+                    <div style={{ marginTop: '4px', fontSize: '13px' }}>
+                      <strong>Status:</strong>{' '}
+                      {statuses.find(s => s.statusId === issue.statusId)?.name || 'Unknown'}
+                    </div>
+                    <div style={{ marginTop: '4px', fontSize: '13px' }}>
+                      <strong>Priority:</strong>{' '}
+                      {priorities.find(p => p.priorityId === issue.priorityId)?.name || 'Unknown'}
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+                      {issue.description?.substring(0, 100)}...
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+        </MapContainer>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
