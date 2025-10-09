@@ -79,20 +79,20 @@ const IssuePage: React.FC = () => {
     const { name, value } = e.target;
 
     if (name === "phoneNumber") {
-    // Remove non-digit characters
-    let numeric = value.replace(/\D/g, "");
+      // Remove non-digit characters
+      let numeric = value.replace(/\D/g, "");
 
-    // Limit to 10 digits
-    if (numeric.length > 10) numeric = numeric.slice(0, 10);
+      // Limit to 10 digits
+      if (numeric.length > 10) numeric = numeric.slice(0, 10);
 
-    // If first digit exists, enforce 6-9
-    if (numeric.length > 0 && !/^[6-9]/.test(numeric[0])) {
-      numeric = ""; // reset if first digit is invalid
+      // If first digit exists, enforce 6-9
+      if (numeric.length > 0 && !/^[6-9]/.test(numeric[0])) {
+        numeric = ""; // reset if first digit is invalid
+      }
+
+      setFormData((prev: any) => ({ ...prev, [name]: numeric }));
+      return;
     }
-
-    setFormData((prev: any) => ({ ...prev, [name]: numeric }));
-    return;
-  }
 
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
@@ -140,7 +140,16 @@ const IssuePage: React.FC = () => {
     }
     setError(null);
 
-    const { latitude: lat, longitude: lng } = automaticCoords;
+    // ✅ Use correct coordinates based on mode
+    const lat =
+      locationMode === "manual" && formData.latitude
+        ? formData.latitude
+        : automaticCoords.latitude;
+    const lng =
+      locationMode === "manual" && formData.longitude
+        ? formData.longitude
+        : automaticCoords.longitude;
+
     const stampedFile = await drawLatLongOnImage(file, lat, lng);
 
     setFormData((prev: any) => {
@@ -164,7 +173,17 @@ const IssuePage: React.FC = () => {
 
   const handleCameraCapture = async (blob: Blob) => {
     const file = new File([blob], `capture_${Date.now()}.jpg`, { type: blob.type });
-    const { latitude: lat, longitude: lng } = automaticCoords;
+
+    // ✅ Use correct coordinates based on mode
+    const lat =
+      locationMode === "manual" && formData.latitude
+        ? formData.latitude
+        : automaticCoords.latitude;
+    const lng =
+      locationMode === "manual" && formData.longitude
+        ? formData.longitude
+        : automaticCoords.longitude;
+
     const stampedFile = await drawLatLongOnImage(file, lat, lng);
 
     setFormData((prev: any) => {
@@ -219,9 +238,18 @@ const IssuePage: React.FC = () => {
       setError("Please select a category");
       return false;
     }
-    if (!automaticCoords.latitude || !automaticCoords.longitude) {
-      setError("Unable to fetch automatic location. Please allow location access.");
-      return false;
+
+    // ✅ Validate based on selected mode
+    if (locationMode === "automatic") {
+      if (!automaticCoords.latitude || !automaticCoords.longitude) {
+        setError("Unable to fetch automatic location. Please allow location access.");
+        return false;
+      }
+    } else {
+      if (!formData.latitude || !formData.longitude) {
+        setError("Please enter manual latitude and longitude.");
+        return false;
+      }
     }
 
     const indianPhoneRegex = /^[6-9]\d{9}$/;
@@ -245,10 +273,21 @@ const IssuePage: React.FC = () => {
     setLoading(true);
     try {
       const imagesToUpload = formData.images.filter((img: any) => img !== null);
+
+      // ✅ Correctly send coordinates based on mode
+      const lat =
+        locationMode === "manual" && formData.latitude
+          ? formData.latitude
+          : automaticCoords.latitude;
+      const lng =
+        locationMode === "manual" && formData.longitude
+          ? formData.longitude
+          : automaticCoords.longitude;
+
       const payload = {
         ...formData,
-        latitude: automaticCoords.latitude,
-        longitude: automaticCoords.longitude,
+        latitude: lat,
+        longitude: lng,
         images: imagesToUpload,
       };
 
@@ -371,7 +410,12 @@ const IssuePage: React.FC = () => {
         <div className="images-section">
           <h3>Attach Images (Max 3)</h3>
           <div className="button-group">
-            <button type="button" style={{ marginRight: "400px",marginTop:"90px" }}className="camera-button" onClick={handleCameraOpen}>
+            <button
+              type="button"
+              style={{ marginRight: "400px", marginTop: "90px" }}
+              className="camera-button"
+              onClick={handleCameraOpen}
+            >
               📷 Open Camera
             </button>
             <label className="file-button">
@@ -428,7 +472,11 @@ const IssuePage: React.FC = () => {
         formData={formData}
         imagePreviews={imagePreviews}
         categoryName={previewCategoryName}
-        imageCoords={automaticCoords}
+        imageCoords={
+          locationMode === "manual"
+            ? { latitude: formData.latitude, longitude: formData.longitude }
+            : automaticCoords
+        }
         onCancel={() => setPreviewOpen(false)}
         onConfirm={handleSubmit}
       />
