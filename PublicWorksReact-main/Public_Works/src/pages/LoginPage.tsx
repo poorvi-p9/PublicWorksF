@@ -13,25 +13,33 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // ✅ If already logged in, redirect
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.role === "Admin") window.location.href = "/admin";
+      else window.location.href = "/create-issue";
+    }
+  }, []);
+
+  // ✅ Handle Google redirect back
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
     if (!code) return;
-    // window.history.replaceState({}, document.title, window.location.pathname);
 
     // Send code to backend
     axios
       .get("http://localhost:5142/auth/callback", { params: { code } })
       .then((res) => {
-        debugger;
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         localStorage.setItem("userId", user.userId); // <-- add this
-localStorage.setItem("user", JSON.stringify(user));
-        //localStorage.setItem("user", JSON.stringify(user));
-        console.log("Backend response:", res.data);
+        localStorage.setItem("user", JSON.stringify(user));
 
+        window.history.replaceState({}, "", "/create-issue");
         // Redirect to dashboard after storing token
         window.location.href = "/create-issue";
       })
@@ -59,29 +67,9 @@ localStorage.setItem("user", JSON.stringify(user));
         username,
         password,
       });
-debugger
       if (res.status === 200) {
-        debugger
-        const { token, user } = res.data;
-
-        if (!token) {
-        setError("Login failed: No token received");
-        return;
-      }
-
-      if (!user) {
-        setError("Login failed: User details missing");
-        console.error("Admin login response:", res.data);
-        return;
-      }
-
-      localStorage.setItem("token", token);
-
-      // Store username as identifier for now
-      localStorage.setItem("userId", user.username); 
-      localStorage.setItem("user", JSON.stringify(user));
-
-        
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
         window.location.href = "/admin";
       }
     } catch (err: any) {

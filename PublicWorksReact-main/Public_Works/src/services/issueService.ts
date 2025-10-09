@@ -8,7 +8,7 @@ export async function createIssue(
   token: string
 ): Promise<any> {
   const formData = new FormData();
-  formData.append("UserId", "1");
+  //formData.append("UserId", "1");
   formData.append("CategoryId", data.CategoryId.toString());
   formData.append("priorityId", data.priorityId.toString());
   formData.append("statusId", data.statusId.toString());
