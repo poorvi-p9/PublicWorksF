@@ -384,10 +384,10 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
+      <div style={{ 
+        minHeight: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
         justifyContent: "center",
         background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)"
       }}>
@@ -409,21 +409,21 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div style={{
+    <div style={{ 
       minHeight: "100vh",
       background: "linear-gradient(135deg, #f8fafc 0%, #e5e9f0 100%)",
       padding: "40px 30px",
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
     }}>
       {/* Header */}
-      <div style={{
-        maxWidth: "1400px",
+      <div style={{ 
+        maxWidth: "1400px", 
         margin: "0 auto",
         marginBottom: "40px"
       }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
           justifyContent: "space-between",
           marginBottom: "10px"
         }}>
@@ -435,17 +435,17 @@ const AdminDashboard: React.FC = () => {
               boxShadow: "0 4px 6px rgba(30, 58, 138, 0.2)"
             }}>
               <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
-                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none" />
+                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
+                  stroke="white" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  fill="none"/>
               </svg>
             </div>
             <div>
-              <h1 style={{
-                fontSize: "32px",
+              <h1 style={{ 
+                fontSize: "32px", 
                 fontWeight: "700",
                 background: "linear-gradient(135deg, #1e3a8a 0%, #b91c1c 100%)",
                 WebkitBackgroundClip: "text",
@@ -454,10 +454,10 @@ const AdminDashboard: React.FC = () => {
               }}>
                 AGREEYA Dashboard
               </h1>
-              <p style={{
-                margin: "4px 0 0 0",
-                color: "#64748b",
-                fontSize: "14px"
+              <p style={{ 
+                margin: "4px 0 0 0", 
+                color: "#64748b", 
+                fontSize: "14px" 
               }}>
                 Public Works Management System
               </p>
@@ -527,7 +527,7 @@ const AdminDashboard: React.FC = () => {
               </svg>
               Logout
             </button>
-
+            
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -544,17 +544,17 @@ const AdminDashboard: React.FC = () => {
                 onFocus={(e) => e.target.style.borderColor = "#1e3a8a"}
                 onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
               />
-              <svg
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
+              <svg 
+                style={{ 
+                  position: "absolute", 
+                  left: "12px", 
+                  top: "50%", 
                   transform: "translateY(-50%)",
                   width: "18px",
                   height: "18px"
-                }}
-                fill="none"
-                stroke="#94a3b8"
+                }} 
+                fill="none" 
+                stroke="#94a3b8" 
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -563,7 +563,7 @@ const AdminDashboard: React.FC = () => {
           </div> */}
         </div>
       </div>
-
+      
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Error Message */}
         {error && (
@@ -636,9 +636,9 @@ const AdminDashboard: React.FC = () => {
                 borderRadius: "50%"
               }}></div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <h3 style={{
-                  margin: 0,
-                  fontSize: "14px",
+                <h3 style={{ 
+                  margin: 0, 
+                  fontSize: "14px", 
                   fontWeight: "600",
                   color: "#64748b",
                   textTransform: "uppercase",
@@ -657,8 +657,8 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <p style={{
-                fontSize: "36px",
+              <p style={{ 
+                fontSize: "36px", 
                 fontWeight: "700",
                 background: card.gradient,
                 WebkitBackgroundClip: "text",
@@ -713,7 +713,7 @@ const AdminDashboard: React.FC = () => {
           >
             <option value="">All Priorities</option>
             {priorities.map(priority => (
-              <option key={priority.priorityId} value={priority.priorityId}>{priority.name}</option>
+              <option key={priority.id} value={priority.id}>{priority.name}</option>
             ))}
           </select>
           <button
@@ -758,23 +758,23 @@ const AdminDashboard: React.FC = () => {
             padding: "20px 30px",
             color: "white"
           }}>
-            <h2 style={{
-              margin: 0,
-              fontSize: "20px",
+            <h2 style={{ 
+              margin: 0, 
+              fontSize: "20px", 
               fontWeight: "600",
               letterSpacing: "0.5px"
             }}>
               Recent Issues
             </h2>
-            <p style={{
-              margin: "4px 0 0 0",
-              fontSize: "14px",
-              opacity: "0.9"
+            <p style={{ 
+              margin: "4px 0 0 0", 
+              fontSize: "14px", 
+              opacity: "0.9" 
             }}>
               Sorted from newest to oldest
             </p>
           </div>
-
+          
           <div style={{ overflowX: "auto" }}>
             <table style={{
               width: "100%",
@@ -806,9 +806,9 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 ) : (
                   issues.map((issue, idx) => (
-                    <tr
-                      key={issue.issueId}
-                      style={{
+                    <tr 
+                      key={issue.issueId} 
+                      style={{ 
                         borderBottom: "1px solid #f1f5f9",
                         transition: "background-color 0.2s ease"
                       }}
@@ -856,9 +856,9 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       {/* Description */}
                       <td style={{ ...tdStyle, color: "#334155" }}>
-                        <div style={{
-                          maxWidth: "500px",
-                          overflow: "hidden",
+                        <div style={{ 
+                          maxWidth: "500px", 
+                          overflow: "hidden", 
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap"
                         }}>
@@ -1026,7 +1026,7 @@ const AdminDashboard: React.FC = () => {
                             }}
                           >
                             {priorities.map((priority) => (
-                              <option key={priority.priorityId} value={priority.priorityId}>
+                              <option key={priority.id} value={priority.id}>
                                 {priority.name}
                               </option>
                             ))}
@@ -1096,8 +1096,8 @@ const AdminDashboard: React.FC = () => {
                           </button>
                           <button
                             style={{
-                              ...btnStyle,
-                              background: "linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)",
+                                ...btnStyle,
+                                background: "linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)",
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
                             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
@@ -1285,7 +1285,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div style={{ marginTop: '4px', fontSize: '13px' }}>
                       <strong>Priority:</strong>{' '}
-                      {priorities.find(p => p.priorityId === issue.priorityId)?.name || 'Unknown'}
+                      {priorities.find(p => p.id === issue.priorityId)?.name || 'Unknown'}
                     </div>
                     <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
                       {issue.description?.substring(0, 100)}...

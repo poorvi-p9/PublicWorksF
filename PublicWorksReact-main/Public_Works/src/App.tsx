@@ -1,8 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import Messages from "./pages/Messages";
+import AdminDashboard from "./pages/AdminDashboard";;
 import IssuePage from "./pages/IssuePage";
 import MainLayout from "./layouts/MainLayout"; // Make sure this exists
 
@@ -17,7 +15,6 @@ function App() {
         {/* Protected Routes (nested under layout) */}
         <Route element={<MainLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/messages" element={<Messages />} />
           <Route path="/create-issue" element={<IssuePage />} />
         </Route>
       </Routes>

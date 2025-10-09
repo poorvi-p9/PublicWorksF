@@ -1,68 +1,85 @@
 import type { IssueCreateRequest, Category, Priority, Status } from "../types/issue";
 
-const API_BASE = "http://localhost:5142/api/Issue/submit";
+const API_BASE = "http://localhost:5142/api";
 
-// ✅ Create Issue with Lat/Lon + Images
+/* --------------------------------------------
+   🔹 Helper for all fetch requests
+--------------------------------------------- */
+async function fetchWithAuth<T>(
+  endpoint: string,
+  token: string,
+  options: RequestInit = {}
+): Promise<T> {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`❌ API Error [${endpoint}] →`, text);
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+
+    // Handle cases with no JSON body (e.g., 204 No Content)
+    const contentType = res.headers.get("Content-Type");
+    if (contentType?.includes("application/json")) {
+      return (await res.json()) as T;
+    }
+
+    return {} as T;
+  } catch (err) {
+    console.error(`🚨 Network or Fetch Error [${endpoint}] →`, err);
+    throw new Error(`Failed to fetch: ${endpoint}`);
+  }
+}
+
+/* --------------------------------------------
+   🔹 Create Issue (with images + optional lat/lon)
+--------------------------------------------- */
 export async function createIssue(
-  data: IssueCreateRequest & { images: File[] },
+  data: IssueCreateRequest & { images?: File[] },
   token: string
 ): Promise<any> {
   const formData = new FormData();
-  formData.append("CategoryId", data.CategoryId.toString());
-  formData.append("priorityId", data.priorityId.toString());
-  formData.append("statusId", data.statusId.toString());
-  formData.append("description", data.description);
-  formData.append("locationText", data.locationText);
-  formData.append("latitude", data.latitude);
-  formData.append("longitude", data.longitude);
-  formData.append("phoneNumber", data.phoneNumber);
 
-  // ✅ Attach images (with lat/lon included in metadata if backend supports)
-  data.images.forEach((file) => {
-    formData.append("images", file);
-  });
+  // Safely append values (only if they exist)
+  const safeAppend = (key: string, value: any) => {
+    if (value !== undefined && value !== null) formData.append(key, value.toString());
+  };
 
-  const res = await fetch(API_BASE, {
+  safeAppend("categoryId", data.CategoryId);
+  safeAppend("priorityId", data.priorityId);
+  safeAppend("statusId", data.statusId);
+  safeAppend("description", data.description);
+  safeAppend("locationText", data.locationText);
+  safeAppend("phoneNumber", data.phoneNumber);
+
+  // Optional: latitude/longitude if available
+  if (data.latitude) safeAppend("latitude", data.latitude);
+  if (data.longitude) safeAppend("longitude", data.longitude);
+
+  // Append multiple images
+  data.images?.forEach((file) => formData.append("images", file));
+
+  return await fetchWithAuth<any>("Issue/submit", token, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
     body: formData,
   });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("Error submitting issue:", errorText);
-    throw new Error(`Failed to create issue: ${res.status} - ${errorText}`);
-  }
-
-  const result = await res.json();
-  return result;
 }
 
-// ✅ Fetch categories
-export async function getCategories(token: string): Promise<Category[]> {
-  const res = await fetch("http://localhost:5142/api/Category", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to fetch categories");
-  return res.json();
-}
+/* --------------------------------------------
+   🔹 Generic Fetcher for Lookup Lists
+--------------------------------------------- */
+export const getCategories = (token: string) =>
+  fetchWithAuth<Category[]>("Category", token);
 
-// ✅ Fetch priorities
-export async function getPriorities(token: string): Promise<Priority[]> {
-  const res = await fetch("http://localhost:5142/api/Priority", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to fetch priorities");
-  return res.json();
-}
+export const getPriorities = (token: string) =>
+  fetchWithAuth<Priority[]>("Priority", token);
 
-// ✅ Fetch statuses
-export async function getStatuses(token: string): Promise<Status[]> {
-  const res = await fetch("http://localhost:5142/api/Status", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to fetch statuses");
-  return res.json();
-}
+export const getStatuses = (token: string) =>
+  fetchWithAuth<Status[]>("Status", token);
