@@ -98,6 +98,8 @@ const AdminDashboard: React.FC = () => {
 
   // Get admin email from localStorage or auth context
   const adminEmail: string = localStorage.getItem('userEmail') || "";
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");  
+  const userId = userData.userId; 
 
   const handleMessageClick = (issue: any) => {
   setSelectedIssue(issue);
@@ -189,6 +191,7 @@ const AdminDashboard: React.FC = () => {
       });
       if (!response.ok) throw new Error("Failed to fetch issues");
       const data = await response.json();
+      console.log("Fetched Issues:", data);
       // console.log("Raw API Issue Response:", data[0]);
       const issues = data.map((issue: any) => {
         const match = issue.location && issue.location.match(/POINT \(([-\d.]+) ([-\d.]+)\)/);
@@ -1059,7 +1062,8 @@ const AdminDashboard: React.FC = () => {
                             isOpen={isMessageModalOpen}
                             onClose={() => setIsMessageModalOpen(false)}
                             issueId={selectedIssue?.issueId}
-                            userId={selectedIssue?.userId}
+                            sentToUserId={selectedIssue?.reporterUserId}
+                            sentByUserId={userId}
                             adminEmail={adminEmail}
                           />
 
@@ -1068,6 +1072,7 @@ const AdminDashboard: React.FC = () => {
                             isOpen={isRemarksModalOpen}
                             onClose={() => setIsRemarksModalOpen(false)}
                             issueId={selectedIssue?.issueId}
+                            userId={userId}
                             adminEmail={adminEmail}
                           />
                         </div>

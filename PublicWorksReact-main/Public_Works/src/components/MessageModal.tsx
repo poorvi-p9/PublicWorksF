@@ -5,7 +5,8 @@ interface MessageModalProps {
   isOpen: boolean;
   onClose: () => void;
   issueId: number;
-  userId: number;
+  sentByUserId: number;
+  sentToUserId: number;
   adminEmail: string;
 }
 
@@ -14,9 +15,10 @@ interface MessageModalProps {
     isOpen: boolean;
     onClose: () => void;
     issueId: number;
-    userId: number;
+    sentByUserId: number;
+    sentToUserId: number;
     adminEmail: string;
-  }> = ({ isOpen, onClose, issueId, userId, adminEmail }) => {
+  }> = ({ isOpen, onClose, issueId, sentByUserId,sentToUserId, adminEmail }) => {
     const [formData, setFormData] = useState({
       subject: '',
       body: ''
@@ -41,12 +43,13 @@ interface MessageModalProps {
      const messageData = {
         messageId: 0,                  // if your backend auto-generates, can be omitted
         issueId: parseInt(String(issueId)) || null,
-        SentByUserId: 6,               // numeric admin UserId
-        SentToUserId: parseInt(String(userId)) || null, // numeric recipient UserId
+        senderId: sentByUserId,               // numeric admin UserId
+        recipientId: parseInt(String(sentToUserId)) || null, // numeric recipient UserId
         Subject: formData.subject,
         Body: formData.body,
         SentAt: new Date().toISOString()
         };
+        console.log("Message Data:", messageData);
         
         const response = await fetch('http://localhost:5142/api/Message', {
           method: 'POST',
