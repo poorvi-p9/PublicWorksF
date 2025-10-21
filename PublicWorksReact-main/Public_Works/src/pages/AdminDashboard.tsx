@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getAuthRole, getAuthToken } from "../utils/auth";
 import type { Priority } from "../types/issue";
 import MessageModal from "../components/MessageModal";
+import EmailModal from "../components/MessageModal";
 import { RemarksModal } from "../components/RemarksModal";
 
 
@@ -27,7 +28,50 @@ const AdminDashboard: React.FC = () => {
   const [currentImages, setCurrentImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+const [selectedEmailRecipient, setSelectedEmailRecipient] = useState<{
+  email: string;
+  name?: string;
+  issueId?: number;
+} | null>(null);
+const [fetchingUserEmail, setFetchingUserEmail] = useState(false);
 
+// Add this handler function that fetches user email from the User API
+const handleEmailClick = async (issue: any) => {
+  setFetchingUserEmail(true);
+  try {
+    const token = getAuthToken() || '';
+    
+    // Fetch user details to get their email
+    const response = await fetch(`http://localhost:5142/api/User/${issue.reporterUserId}`, {
+      headers: { 
+        Authorization: `Bearer ${token}` 
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user details');
+    }
+    
+    const userData = await response.json();
+    console.log('User data fetched:', userData);
+    
+    // Set the email recipient with fetched data
+    setSelectedEmailRecipient({
+      email: userData.email, // Adjust based on your User API response
+      name: userData.name || userData.username || userData.firstName, // Adjust field names
+      issueId: issue.issueId
+    });
+    
+    setIsEmailModalOpen(true);
+    
+  } catch (err: any) {
+    console.error('Failed to fetch user email:', err);
+    alert('Could not retrieve user email address. Please try again.');
+  } finally {
+    setFetchingUserEmail(false);
+  }
+};
   // Open map popup for given lat/lng
   const handleShowMap = (lat: number, lng: number) => {
     setMapCoords({ lat, lng });
@@ -1046,7 +1090,7 @@ const AdminDashboard: React.FC = () => {
                           >
                             Remarks
                           </button>
-                          <button
+                          {/* <button
                             style={{
                               ...btnStyle,
                               background: "linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)",
@@ -1056,16 +1100,43 @@ const AdminDashboard: React.FC = () => {
                             onClick={() => handleMessageClick(issue)}
                             >
                             Message
-                            </button>
+                            </button> */}
                           {/* Message Modal */}
-                          <MessageModal
+                          {/* <MessageModal
                             isOpen={isMessageModalOpen}
                             onClose={() => setIsMessageModalOpen(false)}
                             issueId={selectedIssue?.issueId}
                             sentToUserId={selectedIssue?.reporterUserId}
                             sentByUserId={userId}
                             adminEmail={adminEmail}
-                          />
+                          /> */}
+                          <button
+                          style={{
+                            ...btnStyle,
+                            background: fetchingUserEmail 
+                              ? "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)"
+                              : "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
+                          }}
+                          onMouseEnter={(e) => !fetchingUserEmail && (e.currentTarget.style.transform = "translateY(-2px)")}
+                          onMouseLeave={(e) => !fetchingUserEmail && (e.currentTarget.style.transform = "translateY(0)")}
+                          onClick={() => !fetchingUserEmail && handleEmailClick(issue)}
+                          disabled={fetchingUserEmail}
+                        >
+                          {fetchingUserEmail ? 'Loading...' : 'Email'}
+                        </button>
+
+                        {/* Add the Email Modal after your Message Modal */}
+                        <EmailModal
+                          
+                          isOpen={isEmailModalOpen}
+                          onClose={() => {
+                            setIsEmailModalOpen(false);
+                            setSelectedEmailRecipient(null);
+                          }}
+                          recipientEmail={selectedEmailRecipient?.email || ''}
+                          recipientName={selectedEmailRecipient?.name}
+                          issueId={selectedEmailRecipient?.issueId}
+                        />
 
                           {/* Remarks Modal */}
                           <RemarksModal

@@ -9,21 +9,21 @@ const FRONTEND_REDIRECT = "http://localhost:5173/login";
 const LoginPage = () => {
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [showUser, setShowUser] = useState(true);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // ✅ If already logged in, redirect
+  // If already logged in, redirect
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user?.role === "Admin") window.location.href = "/admin";
       else window.location.href = "/create-issue";
     }
   }, []);
 
-  // ✅ Handle Google redirect back
+  //  Handle Google redirect back
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
@@ -36,7 +36,7 @@ const LoginPage = () => {
       .then((res) => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
-        localStorage.setItem("userId", user.userId); // <-- add this
+        localStorage.setItem("userId", user.userId); 
         localStorage.setItem("user", JSON.stringify(user));
 
         window.history.replaceState({}, "", "/create-issue");
@@ -58,11 +58,9 @@ const LoginPage = () => {
   };
 
   const handleAdminLogin = async () => {
-    debugger
     setError("");
     console.log("Submitting admin login", username, password);
     try {
-      debugger
       const res = await axios.post("http://localhost:5142/auth/adminauth", {
         username,
         password,
