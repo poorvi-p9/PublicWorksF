@@ -20,7 +20,7 @@ const Header: React.FC = () => {
     const token = localStorage.getItem("token");//Retrieves the user’s JWT token from browser localStorage.
 
     try {
-      debugger
+      
       const response = await fetch("http://localhost:5142/Auth/logout", {
         method: "POST",
         headers: {

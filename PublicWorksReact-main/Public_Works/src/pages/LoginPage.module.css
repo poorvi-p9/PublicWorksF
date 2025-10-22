@@ -1,0 +1,132 @@
+/* LoginPage.module.css */
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #003366 0%, #C41E3A 100%);
+}
+
+.cardStyle {
+  width: 350px;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  background-color: #fff;
+  text-align: center;
+}
+
+.title {
+  margin-bottom: 25px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #003366;
+}
+
+.logo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.roleToggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.roleButton {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.roleButton.adminActive {
+  background-color: #C41E3A;
+  color: #fff;
+}
+
+.roleButton.userActive {
+  background-color: #003366;
+  color: #fff;
+}
+
+.roleButton:hover {
+  opacity: 0.9;
+}
+
+.adminForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.inputField {
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: #003366;
+}
+
+.loginButton {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #C41E3A;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.loginButton:hover {
+  background-color: #a01828;
+}
+
+.googleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid #003366;
+  background-color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.googleButton:hover {
+  background-color: #f5f5f5;
+}
+
+.googleIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.errorText {
+  color: #C41E3A;
+  font-size: 14px;
+  margin: 0;
+  text-align: left;
+}
