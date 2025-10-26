@@ -363,9 +363,11 @@ const AdminDashboard: React.FC = () => {
 
   // Effects
   useEffect(() => {
+    
     const roleId = getAuthRole();
     if (roleId !== 1) {
       setError("NOT AUTHORIZED");
+      return;
     }
     fetchStatuses();
     fetchPriorities();
@@ -749,7 +751,6 @@ const AdminDashboard: React.FC = () => {
               Lat: {mapCoords.lat}, Lng: {mapCoords.lng}
             </div>
 
-            {/* ✅ Corrected anchor tag */}
             <a
               href={`https://www.openstreetmap.org/?mlat=${mapCoords.lat}&mlon=${mapCoords.lng}#map=18/${mapCoords.lat}/${mapCoords.lng}`}
               target="_blank"
