@@ -5,6 +5,43 @@ import type { Priority } from "../types/issue";
 import EmailModal from "../components/MessageModal";
 import { RemarksModal } from "../components/RemarksModal";
 import "./AdminDashboard.css";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+// import L from 'leaflet';
+import 'leaflet.markercluster';
+
+// helper func
+const offsetDuplicateMarkers = (issues: any[]) => {
+  const locationMap = new Map<string, number>();
+
+  return issues.map(issue => {
+    if (!issue.latitude || !issue.longitude) return issue;
+
+    const key = `${issue.latitude.toFixed(6)},${issue.longitude.toFixed(6)}`;
+    const count = locationMap.get(key) || 0;
+    locationMap.set(key, count + 1);
+
+    // small offset based on count (0.0001 degrees ≈ 11 meters)
+    const offset = count * 0.0001;
+    const angle = count * (Math.PI / 4); // 45 degrees apart
+
+    return {
+      ...issue,
+      displayLat: issue.latitude + (offset * Math.cos(angle)),
+      displayLng: issue.longitude + (offset * Math.sin(angle))
+    };
+  });
+};
+
+// Fix for default marker icons in react-leaflet
+// delete (L.Icon.Default.prototype as any)._getIconUrl;
+// L.Icon.Default.mergeOptions({
+//   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+//   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+//   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+// });
 
 interface Status {
   statusId: number;
@@ -19,12 +56,12 @@ interface Category {
 }
 
 const AdminDashboard: React.FC = () => {
-  // navigate removed; use Header for logout/navigation
   const API_BASE_URL = "http://localhost:5142/api";
 
   // State for map popup
   const [mapOpen, setMapOpen] = useState(false);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewAllMapOpen, setViewAllMapOpen] = useState(false);
 
   // State for image viewer
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
@@ -112,6 +149,14 @@ const AdminDashboard: React.FC = () => {
     setMapCoords(null);
   };
 
+  const handleShowAllOnMap = () => {
+    setViewAllMapOpen(true);
+  };
+
+  const handleCloseAllMap = () => {
+    setViewAllMapOpen(false);
+  };
+
   // Handler: Fetch and display images for an issue
   const handleViewImages = async (issueId: number) => {
     setLoadingImages(true);
@@ -158,15 +203,11 @@ const AdminDashboard: React.FC = () => {
     setCurrentImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length);
   };
 
-  // Message modal removed — use Email or Remarks instead
-
   // Handler: Open remarks modal
   const handleRemarksClick = (issue: any) => {
     setSelectedIssue(issue);
     setIsRemarksModalOpen(true);
   };
-
-  // Logout handled by Header component
 
   // Fetch: Statuses
   const fetchStatuses = async () => {
@@ -363,7 +404,7 @@ const AdminDashboard: React.FC = () => {
 
   // Effects
   useEffect(() => {
-    
+
     const roleId = getAuthRole();
     if (roleId !== 1) {
       setError("NOT AUTHORIZED");
@@ -480,6 +521,21 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: '20px'
+        }}>
+          <button
+            onClick={handleShowAllOnMap}
+            className="view-all-map-button"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            View All on Map
+          </button>
+        </div>
 
         {/* Stats Cards */}
         <div className="stats-grid">
@@ -784,7 +840,70 @@ const AdminDashboard: React.FC = () => {
         adminEmail={adminEmail}
       />
 
-      {/* Message modal removed - use EmailModal or RemarksModal instead */}
+      {/* View All Issues Map Modal */}
+      {viewAllMapOpen && (
+        <div className="map-modal-overlay">
+          <div className="map-modal-container">
+            <button
+              onClick={handleCloseAllMap}
+              className="map-modal-close-btn"
+            >
+              ✕ Close
+            </button>
+            <h3 className="map-modal-title">
+              All Issues Map View ({issues.filter(i => i.latitude && i.longitude).length} locations)
+            </h3>
+            <div className="map-modal-content-wrapper">
+              <MapContainer
+                center={[28.5, 77.5]}
+                zoom={10}
+                style={{ width: '100%', height: '100%' }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {offsetDuplicateMarkers(issues.filter(issue => issue.latitude && issue.longitude))
+                  .map((issue) => (
+                    <Marker
+                      key={issue.issueId}
+                      position={[issue.displayLat || issue.latitude, issue.displayLng || issue.longitude]}
+                    >
+                      <Popup>
+                        <div className="map-popup-container">
+                          <strong className="map-popup-title">
+                            Issue #{issue.issueId}
+                          </strong>
+                          <div className="map-popup-info">
+                            <div className="map-popup-info-item">
+                              <span className="map-popup-info-label">Category:</span>{' '}
+                              {categories.find(cat => cat.categoryId === issue.categoryId)?.name || 'Unknown'}
+                            </div>
+                            <div className="map-popup-info-item">
+                              <span className="map-popup-info-label">Status:</span>{' '}
+                              {statuses.find(s => s.statusId === issue.statusId)?.name || 'Unknown'}
+                            </div>
+                            <div className="map-popup-info-item">
+                              <span className="map-popup-info-label">Priority:</span>{' '}
+                              {priorities.find(p => p.priorityId === issue.priorityId)?.name || 'Unknown'}
+                            </div>
+                            <div className="map-popup-info-item">
+                              <span className="map-popup-info-label">Date:</span>{' '}
+                              {new Date(issue.createdAt).toLocaleDateString("en-GB")}
+                            </div>
+                          </div>
+                          <div className="map-popup-description">
+                            {issue.description?.substring(0, 100)}...
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+              </MapContainer>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
