@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import AdminDashboard from "./pages/AdminDashboard";;
+import AdminDashboard from "./pages/AdminDashboard";
 import IssuePage from "./pages/IssuePage";
-import MainLayout from "./layouts/MainLayout"; // Make sure this exists
+import MainLayout from "./layouts/MainLayout"; 
 
 function App() {
   return (

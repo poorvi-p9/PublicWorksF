@@ -14,6 +14,7 @@ interface RemarksModalProps {
   isOpen: boolean;
   onClose: () => void;
   issueId: number;
+  userId: number; // ID of the user adding the remark
   adminEmail: string;
 }
 
@@ -21,6 +22,7 @@ export const RemarksModal: React.FC<RemarksModalProps> = ({
   isOpen,
   onClose,
   issueId,
+  userId,
   adminEmail
 }) => {
   const [remarks, setRemarks] = useState<Remark[]>([]);
@@ -64,10 +66,12 @@ export const RemarksModal: React.FC<RemarksModalProps> = ({
     try {
       const token = getAuthToken() || '';
       const payload = {
-        issueId,
+        issueId: issueId,
+        remarkedByUserId: userId,
         remarkText: newRemark,
         remarkedAt: new Date().toISOString()
       };
+      console.log('Saving remark with payload:', payload);
 
       const response = await fetch('http://localhost:5142/api/Remark', {
         method: 'POST',

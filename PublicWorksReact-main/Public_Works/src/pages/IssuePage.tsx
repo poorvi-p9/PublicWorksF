@@ -3,7 +3,7 @@ import CameraCapture from "../components/CameraCapture";
 import PreviewModal from "../components/PreviewModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { getCategories, createIssue } from "../services/issueService";
-import { getAuthToken } from "../utils/auth";
+import { getAuthRole, getAuthToken } from "../utils/auth";
 import type { Category } from "../types/issue";
 import "./IssuePage.css";
 
@@ -20,12 +20,13 @@ const IssuePage: React.FC = () => {
     longitude: "",
     images: [null, null, null],
   });
+  const [error, setError] = useState<string | null>(null); // NEW: for authorization
+
 
   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>([null, null, null]);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [locationMode, setLocationMode] = useState<"manual" | "automatic">("manual");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -34,8 +35,17 @@ const IssuePage: React.FC = () => {
   const [createdCategoryName, setCreatedCategoryName] = useState("");
   const [createdDescription, setCreatedDescription] = useState("");
   const [automaticCoords, setAutomaticCoords] = useState({ latitude: "", longitude: "" });
-
+  
   const token = getAuthToken();
+
+  useEffect(() => {
+  const roleId = getAuthRole();
+
+  // Show NOT AUTHORIZED if roleId === 1
+  if (roleId === 1) {
+    setError("NOT AUTHORIZED");
+  }
+}, []);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -328,8 +338,18 @@ const IssuePage: React.FC = () => {
 
   const previewCategoryName =
     categories.find((c) => c.categoryId === Number(formData.CategoryId))?.name ?? "Unknown";
+  
+  if (error === "NOT AUTHORIZED") {
+  return (
+    <div className="error-container">
+      <div className="error-box">NOT AUTHORIZED</div>
+    </div>
+  );
+}
+
 
   return (
+    
     <div className="issue-page-container">
       <h1>Create Issue</h1>
       <form onSubmit={handlePreview} className="issue-form">

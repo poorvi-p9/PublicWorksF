@@ -1,29 +1,32 @@
-import React, { useEffect, type CSSProperties, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import googleLogo from "../assets/google_logo.png";
 import agreeyaLogo from "../assets/agreeya_logo.png";
+import styles from "./LoginPage.module.css";
 
-const CLIENT_ID = "785596307174-r3f9ad4ftba0fdb9n0asfnq3p9ae5048.apps.googleusercontent.com";
-const FRONTEND_REDIRECT = "http://localhost:5173/login";
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const FRONTEND_REDIRECT = import.meta.env.VITE_FRONTEND_REDIRECT;
 
 const LoginPage = () => {
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [showUser, setShowUser] = useState(true);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // ✅ If already logged in, redirect
+  // If already logged in, redirect
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user?.role === "Admin") window.location.href = "/admin";
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user?.roleId === 1) {
+        window.location.href = "/admin";
+      }
       else window.location.href = "/create-issue";
     }
   }, []);
 
-  // ✅ Handle Google redirect back
+  //  Handle Google redirect back
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
@@ -36,7 +39,7 @@ const LoginPage = () => {
       .then((res) => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
-        localStorage.setItem("userId", user.userId); // <-- add this
+        localStorage.setItem("userId", user.userId); 
         localStorage.setItem("user", JSON.stringify(user));
 
         window.history.replaceState({}, "", "/create-issue");
@@ -58,11 +61,8 @@ const LoginPage = () => {
   };
 
   const handleAdminLogin = async () => {
-    debugger
     setError("");
-    console.log("Submitting admin login", username, password);
     try {
-      debugger
       const res = await axios.post("http://localhost:5142/auth/adminauth", {
         username,
         password,
@@ -89,28 +89,20 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.cardStyle}>
-        <img src={agreeyaLogo} alt="Agreeya Logo" style={styles.logo} />
-        <h1 style={styles.title}>Login</h1>
+    <div className={styles.container}>
+      <div className={styles.cardStyle}>
+        <img src={agreeyaLogo} alt="Agreeya Logo" className={styles.logo} />
+        <h1 className={styles.title}>Login</h1>
 
-        <div style={styles.roleToggle}>
+        <div className={styles.roleToggle}>
           <button
-            style={{
-              ...styles.roleButton,
-              backgroundColor: showAdminForm ? "#C41E3A" : "#f0f0f0",
-              color: showAdminForm ? "#fff" : "#666",
-            }}
+            className={`${styles.roleButton} ${showAdminForm ? styles.adminActive : ''}`}
             onClick={handleAdminClick}
           >
             Admin
           </button>
           <button
-            style={{
-              ...styles.roleButton,
-              backgroundColor: showUser ? "#003366" : "#f0f0f0",
-              color: showUser ? "#fff" : "#666",
-            }}
+            className={`${styles.roleButton} ${showUser ? styles.userActive : ''}`}
             onClick={handleUserClick}
           >
             User
@@ -118,130 +110,37 @@ const LoginPage = () => {
         </div>
 
         {showAdminForm && (
-          <div style={styles.adminForm}>
+          <div className={styles.adminForm}>
             <input
               type="text"
               placeholder="Username"
-              style={styles.inputField}
+              className={styles.inputField}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <input
               type="password"
               placeholder="Password"
-              style={styles.inputField}
+              className={styles.inputField}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {error && <p style={styles.errorText}>{error}</p>}
-            <button style={styles.loginButton} onClick={handleAdminLogin}>
+            {error && <p className={styles.errorText}>{error}</p>}
+            <button className={styles.loginButton} onClick={handleAdminLogin}>
               Login
             </button>
           </div>
         )}
 
         {showUser && (
-          <button onClick={handleLogin} style={styles.googleButton}>
-            <img src={googleLogo} alt="Google" style={styles.googleIcon} />
+          <button onClick={handleLogin} className={styles.googleButton}>
+            <img src={googleLogo} alt="Google" className={styles.googleIcon} />
             Sign in with Google
           </button>
         )}
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    background: "linear-gradient(135deg, #003366 0%, #C41E3A 100%)",
-  } as React.CSSProperties,
-  cardStyle: {
-    width: "350px",
-    padding: "30px",
-    borderRadius: "15px",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-    backgroundColor: "#fff",
-    textAlign: "center",
-  } as React.CSSProperties,
-  title: {
-    marginBottom: "25px",
-    fontSize: "32px",
-    fontWeight: "700",
-    color: "#003366",
-  } as React.CSSProperties,
-  logo: {
-    width: "180px",
-    height: "auto",
-    marginBottom: "20px",
-  } as React.CSSProperties,
-  roleToggle: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "25px",
-  } as React.CSSProperties,
-  roleButton: {
-    flex: 1,
-    padding: "12px 0",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "600",
-    transition: "all 0.3s ease",
-  } as React.CSSProperties,
-  adminForm: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px",
-    marginBottom: "20px",
-  } as React.CSSProperties,
-  inputField: {
-    padding: "12px 15px",
-    borderRadius: "8px",
-    border: "2px solid #e0e0e0",
-    fontSize: "14px",
-    transition: "border-color 0.3s ease",
-  } as React.CSSProperties,
-  loginButton: {
-    padding: "12px",
-    borderRadius: "8px",
-    border: "none",
-    backgroundColor: "#C41E3A",
-    color: "#fff",
-    fontSize: "16px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "background-color 0.3s ease",
-  } as React.CSSProperties,
-  googleButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    padding: "12px 20px",
-    width: "100%",
-    borderRadius: "8px",
-    border: "2px solid #003366",
-    backgroundColor: "#fff",
-    fontSize: "16px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-  } as React.CSSProperties,
-  googleIcon: {
-    width: "20px",
-    height: "20px",
-  } as React.CSSProperties,
-  errorText: {
-    color: "#C41E3A",
-    fontSize: "14px",
-    margin: "0",
-    textAlign: "left",
-  } as React.CSSProperties,
 };
 
 export default LoginPage;
